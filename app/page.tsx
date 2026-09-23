@@ -1,69 +1,80 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { BlankaLogo } from '@/components/BlankaLogo'
+import { MapPin } from 'lucide-react'
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="min-h-screen bg-[#f0f4f0]">
+      <nav className="flex items-center justify-between px-8 py-5">
+        <div className="flex items-center gap-2">
+          <BlankaLogo size={26} />
+          <span className="font-bold text-[#1a2821] text-lg">Blanka</span>
+        </div>
+        <div className="flex items-center gap-8 text-sm text-[#4a5c4d]">
+          <span className="cursor-pointer hover:text-[#1a2821]">Product</span>
+          <span className="cursor-pointer hover:text-[#1a2821]">Photo proof</span>
+          <span className="cursor-pointer hover:text-[#1a2821]">Voice</span>
+        </div>
+      </nav>
+
+      <div className="flex items-center gap-12 px-16 py-12 max-w-7xl mx-auto">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 text-[#5a7a5c] text-xs font-medium mb-6 uppercase tracking-wider">
+            <div className="h-px w-8 bg-[#5a7a5c]"></div>
+            Field Operations
+          </div>
+          <h1 className="text-6xl font-black text-[#1a2821] leading-tight mb-6">
+            Your team.<br />
+            Every job.<br />
+            One tap.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-[#4a5c4d] text-lg mb-8 leading-relaxed">
+            Real-time field management for cleaning services.<br />
+            Check-in, photo proof, voice in any language.
+          </p>
+          <div className="flex gap-4">
+            <Link href="/signup" className="bg-[#5a7a5c] text-white px-6 py-3 rounded-full font-medium flex items-center gap-2 hover:bg-[#4a6a4c] transition-colors">
+              Start Free →
+            </Link>
+            <Link href="/login" className="border border-[#1a2821]/30 text-[#1a2821] px-6 py-3 rounded-full font-medium hover:bg-white/60 transition-colors">
+              See how it works
+            </Link>
+          </div>
+          <p className="text-[#6b7b6e] text-sm mt-8 flex items-center gap-2">
+            <span className="text-[#5a7a5c]">●</span>
+            Live status across every active job
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="flex-1 flex justify-center">
+          <div className="bg-white rounded-3xl shadow-lg p-6 w-80">
+            <p className="text-[#6b7b6e] text-xs font-medium uppercase tracking-wider mb-1">Today&apos;s Shift</p>
+            <h3 className="text-xl font-bold text-[#1a2821] mb-1">North Tower</h3>
+            <p className="text-[#6b7b6e] text-xs mb-4">08:30–12:30</p>
+            <div className="bg-[#f0f4f0] rounded-xl p-3 flex items-center gap-3 mb-3">
+              <MapPin size={14} strokeWidth={1.5} className="text-[#5a7a5c] shrink-0" />
+              <div>
+                <p className="font-medium text-[#1a2821] text-xs">12th floor · East wing</p>
+                <p className="text-[#5a7a5c] text-xs">You&apos;re inside the job zone ✓</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="border border-[#e0e8e1] rounded-xl p-3">
+                <p className="text-xs text-[#6b7b6e] mb-1">Photo proof</p>
+                <p className="text-xs font-medium text-[#1a2821]">0 of 3</p>
+              </div>
+              <div className="border border-[#e0e8e1] rounded-xl p-3">
+                <p className="text-xs text-[#6b7b6e] mb-1">Voice notes</p>
+                <p className="text-xs font-medium text-[#1a2821]">Any language</p>
+              </div>
+            </div>
+            <p className="text-[#6b7b6e] text-xs text-center mb-3">Ready when you are</p>
+            <button className="w-full bg-[#5a7a5c] text-white py-3 rounded-2xl font-medium text-sm flex items-center justify-center gap-2">
+              <span className="text-[#a8c8a8]">●</span> Check In
+            </button>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
-  );
+  )
 }
