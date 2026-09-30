@@ -46,14 +46,19 @@ export default function WorkerPage() {
       const { data: profile } = await supabase.from('profiles').select('full_name').single()
       setUserName(profile?.full_name ?? '')
 
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+
       const { data } = await supabase
         .from('shifts')
         .select('*')
         .eq('worker_id', user.id)
+        .gte('scheduled_start', todayStart.toISOString())
         .order('scheduled_start', { ascending: true })
       const list = data ?? []
       setShifts(list)
-      if (list.length > 0) setSelected(list[0])
+      const firstActive = list.find(s => s.status === 'active' || s.status === 'upcoming')
+      setSelected(firstActive ?? list[0] ?? null)
       setLoading(false)
     }
     load()

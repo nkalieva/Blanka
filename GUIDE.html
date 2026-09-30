@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blanka MVP — Полный гайд</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a2821;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 48px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 900;
+      color: #1a2821;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      color: #5a7a5c;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 14px;
+      font-weight: 800;
+      color: #1a2821;
+      background: #f0f4f0;
+      border-left: 3px solid #5a7a5c;
+      padding: 6px 12px;
+      margin: 28px 0 12px;
+      border-radius: 0 6px 6px 0;
+    }
+    h3 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #4a6a4c;
+      margin: 14px 0 4px;
+    }
+    p { margin-bottom: 6px; color: #3a4a3c; }
+    ul { padding-left: 18px; margin-bottom: 8px; }
+    li { margin-bottom: 3px; color: #3a4a3c; }
+    code {
+      background: #f0f4f0;
+      color: #2a5a2c;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: 'Menlo', 'Monaco', monospace;
+      font-size: 11px;
+    }
+    pre {
+      background: #1a2821;
+      color: #c8e6c9;
+      padding: 12px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 8px 0 12px;
+      font-family: 'Menlo', 'Monaco', monospace;
+      font-size: 11px;
+      line-height: 1.7;
+    }
+    pre code { background: none; color: #c8e6c9; padding: 0; font-size: 11px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+    th {
+      background: #f0f4f0;
+      color: #1a2821;
+      font-weight: 700;
+      padding: 7px 12px;
+      text-align: left;
+      border: 1px solid #d0ddd1;
+    }
+    td {
+      padding: 6px 12px;
+      border: 1px solid #e0e8e1;
+      vertical-align: top;
+    }
+    td:first-child { font-family: monospace; font-size: 11px; color: #c0392b; background: #fff8f8; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .box {
+      background: #f9fbf9;
+      border: 1px solid #e0e8e1;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .box h3 { margin-top: 0; }
+    .step {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 6px;
+      align-items: flex-start;
+    }
+    .step-num {
+      background: #5a7a5c;
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    hr { border: none; border-top: 1px solid #e0e8e1; margin: 24px 0; }
+    @media print {
+      body { padding: 20px 28px; font-size: 11px; }
+      h1 { font-size: 20px; }
+      pre { font-size: 10px; }
+      .two-col { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Blanka MVP</h1>
+  <p class="subtitle">★ Полный гайд — Next.js + Supabase + GitHub Actions</p>
+
+  <!-- 1. SUPABASE -->
+  <h2>1. SUPABASE — База данных</h2>
+
+  <h3>Создать проект</h3>
+  <ul>
+    <li>Зайти на <strong>supabase.com</strong> → New project</li>
+    <li>Сохранить <strong>Project URL</strong> и <strong>anon key</strong> (Settings → API)</li>
+    <li>Authentication → Settings → выключить <strong>"Confirm email"</strong></li>
+  </ul>
+
+  <h3>SQL — таблицы (SQL Editor → Run)</h3>
+  <pre><code>CREATE TABLE profiles (
+  id UUID REFERENCES auth.users PRIMARY KEY,
+  full_name TEXT,
+  role TEXT CHECK (role IN ('worker', 'manager'))
+);
+
+CREATE TABLE shifts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  worker_id UUID REFERENCES profiles(id),
+  location TEXT,
+  status TEXT DEFAULT 'upcoming',
+  scheduled_start TIMESTAMPTZ,
+  checked_in_at TIMESTAMPTZ,
+  checked_out_at TIMESTAMPTZ,
+  photo_url TEXT,
+  voice_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;</code></pre>
+
+  <h3>SQL — политики доступа (RLS)</h3>
+  <pre><code>-- Профили
+CREATE POLICY "Users manage own profile" ON profiles
+  FOR ALL USING (auth.uid() = id);
+
+CREATE POLICY "Authenticated users can view all profiles" ON profiles
+  FOR SELECT TO authenticated USING (true);
+
+-- Смены: worker
+CREATE POLICY "Workers see own shifts" ON shifts
+  FOR SELECT USING (auth.uid() = worker_id);
+
+CREATE POLICY "Workers can insert own shifts" ON shifts
+  FOR INSERT WITH CHECK (auth.uid() = worker_id);
+
+CREATE POLICY "Workers can update own shifts" ON shifts
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = worker_id)
+  WITH CHECK (auth.uid() = worker_id);
+
+-- Смены: manager видит всех
+CREATE POLICY "Managers can view all shifts" ON shifts
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid() AND profiles.role = 'manager')
+  );</code></pre>
+
+  <h3>SQL — Storage для фото и голоса</h3>
+  <pre><code>INSERT INTO storage.buckets (id, name, public)
+VALUES ('shift-photos', 'shift-photos', true) ON CONFLICT DO NOTHING;
+
+CREATE POLICY "Authenticated users can upload photos"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'shift-photos');
+
+CREATE POLICY "Anyone can view photos"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'shift-photos');</code></pre>
+
+  <hr />
+
+  <!-- 2. GITHUB -->
+  <h2>2. GITHUB — Репозиторий через SSH</h2>
+
+  <div class="two-col">
+    <div class="box">
+      <h3>Создать SSH ключ</h3>
+      <pre><code>ssh-keygen -t ed25519 -C "email@example.com"
+cat ~/.ssh/id_ed25519.pub | pbcopy</code></pre>
+      <p>→ GitHub → Settings → SSH keys → New SSH key → вставить</p>
+      <pre><code>ssh -T git@github.com
+# Hi username! — значит работает</code></pre>
+    </div>
+    <div class="box">
+      <h3>Подключить репозиторий</h3>
+      <p>Создать репо на GitHub, потом в терминале:</p>
+      <pre><code>git init
+git remote add origin git@github.com:username/repo.git
+git add -A
+git commit -m "Initial commit"
+git push -u origin main</code></pre>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- 3. NEXT.JS -->
+  <h2>3. NEXT.JS — Создать проект</h2>
+
+  <pre><code>npx create-next-app@latest blanka --typescript --tailwind --app
+cd blanka
+npm install @supabase/supabase-js @supabase/ssr
+npx shadcn@latest init</code></pre>
+
+  <h3>Файл .env.local (создать в корне проекта)</h3>
+  <pre><code>NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...</code></pre>
+  <pre><code>echo ".env.local" >> .gitignore</code></pre>
+
+  <h3>lib/supabase/client.ts</h3>
+  <pre><code>import { createBrowserClient } from '@supabase/ssr'
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}</code></pre>
+
+  <hr />
+
+  <!-- 4. СТРУКТУРА -->
+  <h2>4. СТРУКТУРА ФАЙЛОВ</h2>
+
+  <div class="two-col">
+    <div class="box">
+      <pre><code>blanka/
+├── app/
+│   ├── page.tsx           # Landing
+│   ├── login/page.tsx     # Логин
+│   ├── signup/page.tsx    # Регистрация
+│   ├── worker/page.tsx    # Worker View
+│   └── manager/page.tsx   # Manager View
+├── components/
+│   └── BlankaLogo.tsx
+├── lib/supabase/
+│   ├── client.ts
+│   └── server.ts
+├── middleware.ts
+├── __tests__/
+│   └── shifts.test.ts
+└── .github/workflows/
+    └── ci.yml</code></pre>
+    </div>
+    <div class="box">
+      <h3>Ключевая логика</h3>
+      <div class="step"><div class="step-num">1</div><p><strong>Signup</strong> → создать юзера → INSERT в profiles с ролью</p></div>
+      <div class="step"><div class="step-num">2</div><p><strong>Login</strong> → проверить role → редирект /worker или /manager</p></div>
+      <div class="step"><div class="step-num">3</div><p><strong>Check In</strong> → UPDATE shifts SET status='active', checked_in_at=now()</p></div>
+      <div class="step"><div class="step-num">4</div><p><strong>Фото</strong> → supabase.storage.from('shift-photos').upload(path, file)</p></div>
+      <div class="step"><div class="step-num">5</div><p><strong>Голос</strong> → MediaRecorder → ondataavailable → upload Blob</p></div>
+      <div class="step"><div class="step-num">6</div><p><strong>Check Out</strong> → UPDATE shifts SET status='done', checked_out_at=now()</p></div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- 5. ТЕСТЫ -->
+  <h2>5. ТЕСТЫ — Jest</h2>
+
+  <pre><code>npm install --save-dev jest jest-environment-jsdom @testing-library/react @testing-library/jest-dom ts-jest @types/jest</code></pre>
+
+  <div class="two-col">
+    <div class="box">
+      <h3>jest.config.js</h3>
+      <pre><code>const config = {
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['&lt;rootDir&gt;/jest.setup.ts'],
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest',
+      { tsconfig: { jsx: 'react-jsx' } }]
+  },
+  moduleNameMapper: { '^@/(.*)$': '&lt;rootDir&gt;/$1' },
+  testMatch: ['**/__tests__/**/*.test.ts'],
+}
+module.exports = config</code></pre>
+    </div>
+    <div class="box">
+      <h3>jest.setup.ts</h3>
+      <pre><code>import '@testing-library/jest-dom'</code></pre>
+      <h3>package.json — добавить скрипт</h3>
+      <pre><code>"scripts": {
+  "test": "jest"
+}</code></pre>
+      <h3>Запустить</h3>
+      <pre><code>npm test</code></pre>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- 6. CI/CD -->
+  <h2>6. CI/CD — GitHub Actions</h2>
+
+  <pre><code># .github/workflows/ci.yml
+name: CI
+on:
+  push:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}</code></pre>
+
+  <p>GitHub → репозиторий → <strong>Settings → Secrets and variables → Actions → New repository secret</strong></p>
+  <ul>
+    <li><code>NEXT_PUBLIC_SUPABASE_URL</code> = твой URL</li>
+    <li><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> = твой ключ</li>
+  </ul>
+  <p style="margin-top:8px">После каждого <code>git push</code> → вкладка <strong>Actions</strong> покажет ✓ или ✗</p>
+
+  <hr />
+
+  <!-- 7. ОШИБКИ -->
+  <h2>7. ЧАСТЫЕ ОШИБКИ</h2>
+
+  <table>
+    <tr>
+      <th>Ошибка</th>
+      <th>Решение</th>
+    </tr>
+    <tr>
+      <td>new row violates RLS</td>
+      <td>Выключить "Confirm email" в Supabase → Auth → Settings</td>
+    </tr>
+    <tr>
+      <td>Bucket not found</td>
+      <td>Создать bucket в Supabase → Storage → New bucket (public: ON)</td>
+    </tr>
+    <tr>
+      <td>column does not exist</td>
+      <td>Запустить: <code>ALTER TABLE shifts ADD COLUMN IF NOT EXISTS photo_url TEXT;</code></td>
+    </tr>
+    <tr>
+      <td>permission denied publickey</td>
+      <td>Перекопировать SSH ключ через <code>cat ~/.ssh/id_ed25519.pub | pbcopy</code></td>
+    </tr>
+    <tr>
+      <td>ts-node required</td>
+      <td>Переименовать <code>jest.config.ts</code> → <code>jest.config.js</code></td>
+    </tr>
+    <tr>
+      <td>User already registered</td>
+      <td>Удалить юзера в Supabase → Authentication → Users</td>
+    </tr>
+  </table>
+
+</body>
+</html>
