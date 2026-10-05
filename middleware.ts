@@ -23,7 +23,22 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  const role = user.user_metadata?.role as string | undefined
+  const path = request.nextUrl.pathname
+
+  if (path.startsWith('/manager') && role !== 'manager') {
+    return NextResponse.redirect(new URL('/worker', request.url))
+  }
+
+  if (path.startsWith('/worker') && role !== 'worker') {
+    return NextResponse.redirect(new URL('/manager', request.url))
+  }
 
   return supabaseResponse
 }

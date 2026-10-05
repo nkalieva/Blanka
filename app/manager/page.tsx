@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { BlankaLogo } from '@/components/BlankaLogo'
-import { MapPin, Camera, Mic, X, Plus, Trash2 } from 'lucide-react'
+import { MapPin, Camera, Mic, X, Plus, Trash2, RefreshCw } from 'lucide-react'
 
 type Shift = {
   id: string
@@ -35,8 +35,9 @@ export default function ManagerPage() {
   const [shifts, setShifts] = useState<Shift[]>([])
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
+  const [managerId, setManagerId] = useState('')
   const [selected, setSelected] = useState<Shift | null>(null)
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'active' | 'done' | 'archive'>('all')
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'active' | 'archive'>('all')
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [workers, setWorkers] = useState<Worker[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -47,6 +48,8 @@ export default function ManagerPage() {
   const [formError, setFormError] = useState('')
   const [formSaving, setFormSaving] = useState(false)
   const [archiveSort, setArchiveSort] = useState<'desc' | 'asc'>('desc')
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
   const [openYears, setOpenYears] = useState<Record<string, boolean>>({})
   const router = useRouter()
@@ -56,6 +59,7 @@ export default function ManagerPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setManagerId(user.id)
 
       const { data: profile } = await supabase.from('profiles').select('full_name').single()
       setUserName(profile?.full_name ?? '')
@@ -63,13 +67,14 @@ export default function ManagerPage() {
       const { data: shiftsData } = await supabase
         .from('shifts')
         .select('*')
+        .eq('manager_id', user.id)
         .order('scheduled_start', { ascending: true })
 
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, role')
+        .select('id, full_name, role, manager_id')
 
-      const workerList = (profiles ?? []).filter(p => p.role === 'worker')
+      const workerList = (profiles ?? []).filter(p => p.role === 'worker' && p.manager_id === user.id)
       setWorkers(workerList)
       if (workerList.length > 0) setFormWorker(workerList[0].id)
 
@@ -112,6 +117,7 @@ export default function ManagerPage() {
     const scheduled_start = new Date(`${formDate}T${formTime}:00`).toISOString()
     const { error } = await supabase.from('shifts').insert({
       worker_id: formWorker,
+      manager_id: managerId,
       location: formLocation.trim(),
       scheduled_start,
       status: 'upcoming',
@@ -121,8 +127,7 @@ export default function ManagerPage() {
       setFormSaving(false)
       return
     }
-    // Reload shifts
-    const { data: shiftsData } = await supabase.from('shifts').select('*').order('scheduled_start', { ascending: true })
+    const { data: shiftsData } = await supabase.from('shifts').select('*').eq('manager_id', managerId).order('scheduled_start', { ascending: true })
     const { data: profiles } = await supabase.from('profiles').select('id, full_name')
     const profileMap: Record<string, string> = {}
     for (const p of profiles ?? []) profileMap[p.id] = p.full_name
@@ -135,37 +140,41 @@ export default function ManagerPage() {
     setFormSaving(false)
   }
 
+  async function handleRefresh() {
+    setRefreshing(true)
+    const supabase = createClient()
+    const { data: shiftsData } = await supabase.from('shifts').select('*').eq('manager_id', managerId).order('scheduled_start', { ascending: true })
+    const { data: profiles } = await supabase.from('profiles').select('id, full_name, role')
+    const profileMap: Record<string, string> = {}
+    for (const p of profiles ?? []) profileMap[p.id] = p.full_name
+    const enriched = (shiftsData ?? []).map(s => ({ ...s, worker_name: profileMap[s.worker_id] ?? 'Unknown' }))
+    setShifts(enriched)
+    setLastUpdated(new Date())
+    setRefreshing(false)
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
   }
 
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
-  const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999)
-
-  const todayShifts = shifts.filter(s => {
-    const d = new Date(s.scheduled_start)
-    return d >= todayStart && d <= todayEnd
-  })
-  const archiveShifts = shifts.filter(s => {
-    const d = new Date(s.scheduled_start)
-    return s.status === 'done' && (d < todayStart || d > todayEnd)
-  })
+  const activeShifts = shifts.filter(s => s.status !== 'done' && s.status !== 'cancelled')
+  const archiveShifts = shifts.filter(s => s.status === 'done')
 
   const filtered =
-    filter === 'all' ? todayShifts :
+    filter === 'all' ? activeShifts :
     filter === 'archive' ? [...archiveShifts].sort((a, b) => {
       const diff = new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime()
       return archiveSort === 'desc' ? diff : -diff
     }) :
-    todayShifts.filter(s => s.status === filter)
+    activeShifts.filter(s => s.status === filter)
 
   const counts = {
-    all: todayShifts.length,
-    upcoming: todayShifts.filter(s => s.status === 'upcoming').length,
-    active: todayShifts.filter(s => s.status === 'active').length,
-    done: todayShifts.filter(s => s.status === 'done').length,
+    all: activeShifts.length,
+    upcoming: activeShifts.filter(s => s.status === 'upcoming').length,
+    active: activeShifts.filter(s => s.status === 'active').length,
+    done: archiveShifts.length,
     archive: archiveShifts.length,
   }
 
@@ -284,6 +293,15 @@ export default function ManagerPage() {
                 Manager View
               </button>
             </div>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 text-[#6b7b6e] text-sm px-3 py-2 hover:text-[#1a2821] transition-colors disabled:opacity-50"
+              title={`Last updated: ${lastUpdated.toLocaleTimeString()}`}
+            >
+              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+              {refreshing ? 'Updating...' : lastUpdated.toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })}
+            </button>
             <button onClick={handleSignOut} className="text-[#6b7b6e] text-sm px-3 py-2 hover:text-[#1a2821] transition-colors">
               {userName} · Sign out
             </button>
@@ -294,8 +312,8 @@ export default function ManagerPage() {
       <div className="h-px bg-[#e0e8e1] mx-8 mb-6"></div>
 
       {/* Stats row */}
-      <div className="px-8 mb-6 grid grid-cols-5 gap-3">
-        {(['all', 'upcoming', 'active', 'done', 'archive'] as const).map(key => (
+      <div className="px-8 mb-6 grid grid-cols-4 gap-3">
+        {(['all', 'upcoming', 'active', 'archive'] as const).map(key => (
           <button
             key={key}
             onClick={() => setFilter(key)}
@@ -307,7 +325,7 @@ export default function ManagerPage() {
           >
             <p className="text-2xl font-black text-[#1a2821]">{counts[key]}</p>
             <p className="text-xs font-medium text-[#6b7b6e] uppercase tracking-wider mt-1">
-              {key === 'all' ? 'Today' : key === 'archive' ? 'Archive' : key}
+              {key === 'all' ? 'Active' : key === 'archive' ? 'Archive' : key}
             </p>
           </button>
         ))}

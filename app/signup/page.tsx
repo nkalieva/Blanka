@@ -24,7 +24,11 @@ export default function SignupPage() {
     setError('')
 
     const supabase = createClient()
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { role } },
+    })
 
     if (signUpError || !data.user) {
       setError(signUpError?.message ?? 'Signup failed')
