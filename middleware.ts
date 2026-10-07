@@ -29,7 +29,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  const role = user.user_metadata?.role as string | undefined
+  let role = user.user_metadata?.role as string | undefined
+
+  if (!role) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    role = profile?.role
+  }
+
+  if (!role) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
   const path = request.nextUrl.pathname
 
   if (path.startsWith('/manager') && role !== 'manager') {
