@@ -40,6 +40,10 @@ type Messages = {
   newShift: string
   refresh: string
   lastUpdated: string
+  managerView: string
+  workerView: string
+  switchToWorker: string
+  updating: string
   noShifts: string
   newerFirst: string
   olderFirst: string
@@ -101,6 +105,10 @@ const translations: Record<Locale, Messages> = {
     newShift: 'New Shift',
     refresh: 'Refresh',
     lastUpdated: 'Updated',
+    managerView: 'Manager View',
+    workerView: 'Worker View',
+    switchToWorker: 'Switch to Worker View',
+    updating: 'Updating...',
     noShifts: 'No shifts',
     newerFirst: 'Newer first',
     olderFirst: 'Older first',
@@ -159,6 +167,10 @@ const translations: Record<Locale, Messages> = {
     newShift: 'Neue Schicht',
     refresh: 'Aktualisieren',
     lastUpdated: 'Aktualisiert',
+    managerView: 'Manager-Ansicht',
+    workerView: 'Mitarbeiter-Ansicht',
+    switchToWorker: 'Zur Mitarbeiter-Ansicht',
+    updating: 'Wird aktualisiert...',
     noShifts: 'Keine Schichten',
     newerFirst: 'Neueste zuerst',
     olderFirst: 'Älteste zuerst',
@@ -217,6 +229,10 @@ const translations: Record<Locale, Messages> = {
     newShift: 'Новая смена',
     refresh: 'Обновить',
     lastUpdated: 'Обновлено',
+    managerView: 'Вид менеджера',
+    workerView: 'Вид сотрудника',
+    switchToWorker: 'Перейти к виду сотрудника',
+    updating: 'Обновление...',
     noShifts: 'Нет смен',
     newerFirst: 'Сначала новые',
     olderFirst: 'Сначала старые',
@@ -275,6 +291,10 @@ const translations: Record<Locale, Messages> = {
     newShift: 'Нова зміна',
     refresh: 'Оновити',
     lastUpdated: 'Оновлено',
+    managerView: 'Вигляд менеджера',
+    workerView: 'Вигляд працівника',
+    switchToWorker: 'Перейти до вигляду працівника',
+    updating: 'Оновлення...',
     noShifts: 'Немає змін',
     newerFirst: 'Спочатку нові',
     olderFirst: 'Спочатку старі',
@@ -333,6 +353,10 @@ const translations: Record<Locale, Messages> = {
     newShift: 'Новая змена',
     refresh: 'Абнавіць',
     lastUpdated: 'Абноўлена',
+    managerView: 'Выгляд менеджара',
+    workerView: 'Выгляд супрацоўніка',
+    switchToWorker: 'Перайсці да выгляду супрацоўніка',
+    updating: 'Абнаўленне...',
     noShifts: 'Няма змен',
     newerFirst: 'Спачатку новыя',
     olderFirst: 'Спачатку старыя',
@@ -391,6 +415,10 @@ const translations: Record<Locale, Messages> = {
     newShift: 'Nowa zmiana',
     refresh: 'Odśwież',
     lastUpdated: 'Zaktualizowano',
+    managerView: 'Widok kierownika',
+    workerView: 'Widok pracownika',
+    switchToWorker: 'Przejdź do widoku pracownika',
+    updating: 'Aktualizowanie...',
     noShifts: 'Brak zmian',
     newerFirst: 'Najpierw nowsze',
     olderFirst: 'Najpierw starsze',
@@ -449,6 +477,10 @@ const translations: Record<Locale, Messages> = {
     newShift: 'Yeni Vardiya',
     refresh: 'Yenile',
     lastUpdated: 'Güncellendi',
+    managerView: 'Yönetici Görünümü',
+    workerView: 'Çalışan Görünümü',
+    switchToWorker: 'Çalışan Görünümüne Geç',
+    updating: 'Güncelleniyor...',
     noShifts: 'Vardiya yok',
     newerFirst: 'Önce yeni',
     olderFirst: 'Önce eski',

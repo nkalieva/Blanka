@@ -281,7 +281,7 @@ export default function ManagerPage() {
         </p>
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-3xl font-black text-[#1a2821]">Manager View</h1>
+            <h1 className="text-3xl font-black text-[#1a2821]">{t.managerView}</h1>
             <p className="text-[#6b7b6e] text-sm mt-1">{t.allWorkers}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -290,10 +290,10 @@ export default function ManagerPage() {
                 onClick={() => router.push('/worker')}
                 className="bg-white text-[#4a5c4d] px-5 py-2 text-sm hover:bg-[#f0f4f0] transition-colors"
               >
-                Switch to Worker View
+                {t.switchToWorker}
               </button>
               <button className="bg-[#5a7a5c] text-white px-5 py-2 text-sm font-medium">
-                Manager View
+                {t.managerView}
               </button>
             </div>
             <button
@@ -303,7 +303,7 @@ export default function ManagerPage() {
               title={`Last updated: ${lastUpdated.toLocaleTimeString()}`}
             >
               <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-              {refreshing ? 'Updating...' : lastUpdated.toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })}
+              {refreshing ? t.updating : lastUpdated.toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })}
             </button>
             <LanguageSwitcher />
             <button onClick={handleSignOut} className="text-[#6b7b6e] text-sm px-3 py-2 hover:text-[#1a2821] transition-colors">

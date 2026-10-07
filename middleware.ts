@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/worker', request.url))
   }
 
-  if (path.startsWith('/worker') && role !== 'worker') {
+  if (path.startsWith('/worker') && role !== 'worker' && role !== 'manager') {
     return NextResponse.redirect(new URL('/manager', request.url))
   }
 
