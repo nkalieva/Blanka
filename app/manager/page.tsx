@@ -77,7 +77,7 @@ export default function ManagerPage() {
         .from('profiles')
         .select('id, full_name, role, manager_id')
 
-      const workerList = (profiles ?? []).filter(p => p.role === 'worker' && p.manager_id === user.id)
+      const workerList = (profiles ?? []).filter(p => p.role === 'worker')
       setWorkers(workerList)
       if (workerList.length > 0) setFormWorker(workerList[0].id)
 
