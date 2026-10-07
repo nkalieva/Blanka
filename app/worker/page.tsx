@@ -227,7 +227,7 @@ export default function WorkerPage() {
         </p>
         <div className="flex items-start justify-between">
           <div className="flex-1 text-center">
-            <p className="text-[#6b7b6e] text-sm font-medium mb-1">{t.welcome}</p>
+            <p className="text-[#1a2821] text-lg font-semibold mb-1">{t.welcome}</p>
             <h1 className="text-5xl font-black text-[#1a2821]">{userName}</h1>
             <p className="text-[#6b7b6e] text-sm mt-2">
               {new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
