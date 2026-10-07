@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useLang } from '@/lib/i18n'
 import Link from 'next/link'
 
 export default function SignupPage() {
@@ -17,6 +19,7 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { t } = useLang()
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -51,15 +54,18 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Blanka</CardTitle>
-          <p className="text-center text-gray-500 text-sm">Create your account</p>
+          <p className="text-center text-gray-500 text-sm">{t.signUp}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full name</Label>
+              <Label htmlFor="fullName">{t.fullName}</Label>
               <Input
                 id="fullName"
                 type="text"
@@ -69,7 +75,7 @@ export default function SignupPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.email}</Label>
               <Input
                 id="email"
                 type="email"
@@ -79,7 +85,7 @@ export default function SignupPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password (min. 6 characters)</Label>
+              <Label htmlFor="password">{t.passwordHint}</Label>
               <Input
                 id="password"
                 type="password"
@@ -90,7 +96,7 @@ export default function SignupPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>{t.role}</Label>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -99,7 +105,7 @@ export default function SignupPage() {
                     checked={role === 'worker'}
                     onChange={() => setRole('worker')}
                   />
-                  Worker
+                  {t.worker}
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -108,18 +114,18 @@ export default function SignupPage() {
                     checked={role === 'manager'}
                     onChange={() => setRole('manager')}
                   />
-                  Manager
+                  {t.manager}
                 </label>
               </div>
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? t.creatingAccount : t.createAccount}
             </Button>
             <p className="text-center text-sm text-gray-500">
-              Already have an account?{' '}
+              {t.haveAccount}{' '}
               <Link href="/login" className="text-blue-600 hover:underline">
-                Sign in
+                {t.signIn}
               </Link>
             </p>
           </form>

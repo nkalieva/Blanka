@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useLang } from '@/lib/i18n'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -15,6 +17,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { t } = useLang()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -40,15 +43,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Blanka</CardTitle>
-          <p className="text-center text-gray-500 text-sm">Sign in to your account</p>
+          <p className="text-center text-gray-500 text-sm">{t.appTagline}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.email}</Label>
               <Input
                 id="email"
                 type="email"
@@ -58,7 +64,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t.password}</Label>
               <Input
                 id="password"
                 type="password"
@@ -69,12 +75,12 @@ export default function LoginPage() {
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? t.signingIn : t.signIn}
             </Button>
             <p className="text-center text-sm text-gray-500">
-              No account?{' '}
+              {t.noAccount}{' '}
               <Link href="/signup" className="text-blue-600 hover:underline">
-                Sign up
+                {t.signUp}
               </Link>
             </p>
           </form>

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { BlankaLogo } from '@/components/BlankaLogo'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useLang } from '@/lib/i18n'
 import { MapPin, Camera, Mic, X, Plus, Trash2, RefreshCw } from 'lucide-react'
 
 type Shift = {
@@ -53,6 +55,7 @@ export default function ManagerPage() {
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
   const [openYears, setOpenYears] = useState<Record<string, boolean>>({})
   const router = useRouter()
+  const { t } = useLang()
 
   useEffect(() => {
     async function load() {
@@ -95,10 +98,10 @@ export default function ManagerPage() {
 
   async function handleDeleteShift(shift: Shift) {
     if (shift.status === 'done') {
-      alert('Done shifts are kept as archive and cannot be deleted.')
+      alert(t.deleteDoneError)
       return
     }
-    if (!confirm('Delete this shift?')) return
+    if (!confirm(t.deleteConfirm)) return
     const supabase = createClient()
     await supabase.from('shifts').delete().eq('id', shift.id)
     const remaining = shifts.filter(s => s.id !== shift.id)
@@ -180,7 +183,7 @@ export default function ManagerPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#f0f4f0] flex items-center justify-center text-[#6b7b6e]">
-      Loading...
+      {t.loading}
     </div>
   )
 
@@ -190,13 +193,13 @@ export default function ManagerPage() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-black text-[#1a2821]">New Shift</h2>
+              <h2 className="text-lg font-black text-[#1a2821]">{t.newShift}</h2>
               <button onClick={() => setShowForm(false)} className="text-[#6b7b6e] hover:text-[#1a2821]"><X size={20} /></button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">Worker</label>
+                <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">{t.worker}</label>
                 <select
                   value={formWorker}
                   onChange={e => setFormWorker(e.target.value)}
@@ -209,7 +212,7 @@ export default function ManagerPage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">Location</label>
+                <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">{t.location}</label>
                 <input
                   type="text"
                   value={formLocation}
@@ -221,7 +224,7 @@ export default function ManagerPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">Date</label>
+                  <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">{t.date}</label>
                   <input
                     type="date"
                     value={formDate}
@@ -230,7 +233,7 @@ export default function ManagerPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">Time</label>
+                  <label className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider block mb-1">{t.time}</label>
                   <input
                     type="time"
                     value={formTime}
@@ -247,7 +250,7 @@ export default function ManagerPage() {
                 disabled={formSaving}
                 className="w-full bg-[#5a7a5c] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#4a6a4c] transition-colors disabled:opacity-50"
               >
-                {formSaving ? 'Creating...' : 'Create Shift'}
+                {formSaving ? t.saving : t.createShift}
               </button>
             </div>
           </div>
@@ -279,7 +282,7 @@ export default function ManagerPage() {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-3xl font-black text-[#1a2821]">Manager View</h1>
-            <p className="text-[#6b7b6e] text-sm mt-1">All workers, all shifts — real-time overview.</p>
+            <p className="text-[#6b7b6e] text-sm mt-1">{t.allWorkers}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex rounded-xl overflow-hidden border border-[#e0e8e1]">
@@ -302,8 +305,9 @@ export default function ManagerPage() {
               <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Updating...' : lastUpdated.toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })}
             </button>
+            <LanguageSwitcher />
             <button onClick={handleSignOut} className="text-[#6b7b6e] text-sm px-3 py-2 hover:text-[#1a2821] transition-colors">
-              {userName} · Sign out
+              {userName} · {t.signOut}
             </button>
           </div>
         </div>
@@ -325,7 +329,7 @@ export default function ManagerPage() {
           >
             <p className="text-2xl font-black text-[#1a2821]">{counts[key]}</p>
             <p className="text-xs font-medium text-[#6b7b6e] uppercase tracking-wider mt-1">
-              {key === 'all' ? 'Active' : key === 'archive' ? 'Archive' : key}
+              {key === 'all' ? t.tabActive : key === 'archive' ? t.tabArchive : key === 'upcoming' ? t.tabUpcoming : t.active}
             </p>
           </button>
         ))}
@@ -339,11 +343,11 @@ export default function ManagerPage() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider">
-                {filter === 'archive' ? 'Archive' : 'All Shifts'}
+                {filter === 'archive' ? t.tabArchive : t.tabActive}
               </p>
               <p className="text-xs text-[#6b7b6e]">
                 {filter === 'archive'
-                  ? `${archiveShifts.length} completed shift${archiveShifts.length !== 1 ? 's' : ''}`
+                  ? `${archiveShifts.length} ${t.done.toLowerCase()}`
                   : new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
               </p>
             </div>
@@ -353,7 +357,7 @@ export default function ManagerPage() {
                   onClick={() => setArchiveSort(s => s === 'desc' ? 'asc' : 'desc')}
                   className="text-xs border border-[#e0e8e1] bg-white rounded px-2 py-1 text-[#6b7b6e] hover:border-[#5a7a5c] transition-colors"
                 >
-                  {archiveSort === 'desc' ? '↓ Newest' : '↑ Oldest'}
+                  {archiveSort === 'desc' ? `↓ ${t.newerFirst}` : `↑ ${t.olderFirst}`}
                 </button>
               )}
               <span className="text-xs border border-[#e0e8e1] bg-white rounded px-2 py-1 text-[#6b7b6e]">
@@ -370,7 +374,7 @@ export default function ManagerPage() {
 
           <div className="space-y-2">
             {filtered.length === 0 && (
-              <p className="text-sm text-[#6b7b6e] text-center py-8">No shifts found</p>
+              <p className="text-sm text-[#6b7b6e] text-center py-8">{t.noShifts}</p>
             )}
 
             {filter === 'archive' ? (() => {

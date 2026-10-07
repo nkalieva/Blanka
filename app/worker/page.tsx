@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { BlankaLogo, SparkleIcon } from '@/components/BlankaLogo'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useLang } from '@/lib/i18n'
 import { Camera, Mic, MapPin, Loader2, X } from 'lucide-react'
 
 type Shift = {
@@ -36,6 +38,7 @@ export default function WorkerPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const router = useRouter()
+  const { t } = useLang()
 
   useEffect(() => {
     async function load() {
@@ -194,7 +197,7 @@ export default function WorkerPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#f0f4f0] flex items-center justify-center text-[#6b7b6e]">
-      Loading...
+      {t.loading}
     </div>
   )
 
@@ -224,23 +227,13 @@ export default function WorkerPage() {
         </p>
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-3xl font-black text-[#1a2821]">Worker View</h1>
-            <p className="text-[#6b7b6e] text-sm mt-1">Your schedule, job proof, and shift controls in one place.</p>
+            <h1 className="text-3xl font-black text-[#1a2821]">{t.yourShift}</h1>
+            <p className="text-[#6b7b6e] text-sm mt-1">{t.today}</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex rounded-xl overflow-hidden border border-[#e0e8e1]">
-              <button className="bg-[#5a7a5c] text-white px-5 py-2 text-sm font-medium">
-                Worker View
-              </button>
-              <button
-                onClick={() => router.push('/manager')}
-                className="bg-white text-[#4a5c4d] px-5 py-2 text-sm hover:bg-[#f0f4f0] transition-colors"
-              >
-                Switch to Manager View
-              </button>
-            </div>
+            <LanguageSwitcher />
             <button onClick={handleSignOut} className="text-[#6b7b6e] text-sm px-3 py-2 hover:text-[#1a2821] transition-colors">
-              {userName} · Sign out
+              {userName} · {t.signOut}
             </button>
           </div>
         </div>
@@ -255,7 +248,7 @@ export default function WorkerPage() {
         <div className="w-72 shrink-0">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider">Today&apos;s Shifts</p>
+              <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider">{t.today}</p>
               <p className="text-xs text-[#6b7b6e]">
                 {new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
               </p>
@@ -309,7 +302,7 @@ export default function WorkerPage() {
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-[#1a2821]">{formatTime(selected.scheduled_start)}</p>
-                <p className="text-xs text-[#6b7b6e]">scheduled</p>
+                <p className="text-xs text-[#6b7b6e]">{t.scheduled}</p>
               </div>
             </div>
 
@@ -319,7 +312,7 @@ export default function WorkerPage() {
               {/* Step 1: Check In */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-[#1a2821]">Check In</p>
+                  <p className="font-semibold text-[#1a2821]">{t.checkIn}</p>
                   <p className="text-xs text-[#6b7b6e]">Required</p>
                 </div>
                 {selected.status === 'upcoming' && (
@@ -327,7 +320,7 @@ export default function WorkerPage() {
                     onClick={() => handleCheckIn(selected.id)}
                     className="w-full bg-[#5a7a5c] text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#4a6a4c] transition-colors"
                   >
-                    → Check In
+                    → {t.checkIn}
                   </button>
                 )}
                 {selected.status !== 'upcoming' && (
@@ -342,7 +335,7 @@ export default function WorkerPage() {
               {/* Step 2: Upload photo */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-[#1a2821]">Upload photo</p>
+                  <p className="font-semibold text-[#1a2821]">{t.uploadPhoto}</p>
                   <p className="text-xs text-[#6b7b6e]">Optional</p>
                 </div>
 
@@ -382,8 +375,8 @@ export default function WorkerPage() {
                       className="w-full border border-[#e0e8e1] rounded-xl py-3 flex items-center justify-center gap-2 text-[#8a9b8d] text-sm hover:bg-[#f9fbf9] transition-colors disabled:opacity-50"
                     >
                       {uploading
-                        ? <><Loader2 size={16} className="animate-spin" /> Uploading...</>
-                        : <><Camera size={16} strokeWidth={1.5} /> Upload photo</>
+                        ? <><Loader2 size={16} className="animate-spin" /> {t.saving}</>
+                        : <><Camera size={16} strokeWidth={1.5} /> {t.uploadPhoto}</>
                       }
                     </button>
                     {uploadError && (
@@ -398,7 +391,7 @@ export default function WorkerPage() {
               {/* Step 3: Voice note */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold text-[#1a2821]">Voice note</p>
+                  <p className="font-semibold text-[#1a2821]">{t.recordVoice}</p>
                   <p className="text-xs text-[#6b7b6e]">Optional · any language</p>
                 </div>
 
@@ -413,7 +406,7 @@ export default function WorkerPage() {
                       onClick={recording ? stopRecording : startRecording}
                       className="mt-2 text-xs text-[#6b7b6e] hover:text-[#1a2821] flex items-center gap-1"
                     >
-                      <Mic size={12} strokeWidth={1.5} /> Record again
+                      <Mic size={12} strokeWidth={1.5} /> {t.recordVoice}
                     </button>
                   </div>
                 ) : recording ? (
@@ -431,8 +424,8 @@ export default function WorkerPage() {
                     className="w-full border border-[#e0e8e1] rounded-xl py-3 flex items-center justify-center gap-2 text-[#8a9b8d] text-sm hover:bg-[#f9fbf9] transition-colors disabled:opacity-50"
                   >
                     {uploading
-                      ? <><Loader2 size={16} className="animate-spin" /> Uploading...</>
-                      : <><Mic size={16} strokeWidth={1.5} /> Hold to record</>
+                      ? <><Loader2 size={16} className="animate-spin" /> {t.saving}</>
+                      : <><Mic size={16} strokeWidth={1.5} /> {t.recordVoice}</>
                     }
                   </button>
                 )}
@@ -448,7 +441,7 @@ export default function WorkerPage() {
                     <Camera size={14} strokeWidth={1.5} className={`mt-0.5 shrink-0 ${selected.photo_url ? 'text-[#5a7a5c]' : 'text-[#8a9b8d]'}`} />
                     <div>
                       <p className="text-xs font-medium text-[#1a2821]">
-                        {selected.photo_url ? 'Photo uploaded' : 'No photo uploaded'}
+                        {selected.photo_url ? `${t.photo} ✓` : `${t.photo} —`}
                       </p>
                       <p className="text-xs text-[#6b7b6e]">Optional</p>
                     </div>
@@ -457,7 +450,7 @@ export default function WorkerPage() {
                     <Mic size={14} strokeWidth={1.5} className={`mt-0.5 shrink-0 ${selected.voice_url ? 'text-[#5a7a5c]' : 'text-[#8a9b8d]'}`} />
                     <div>
                       <p className="text-xs font-medium text-[#1a2821]">
-                        {selected.voice_url ? 'Voice recorded' : 'No voice note'}
+                        {selected.voice_url ? `${t.voice} ✓` : `${t.voice} —`}
                       </p>
                       <p className="text-xs text-[#6b7b6e]">Optional · any language</p>
                     </div>
@@ -474,21 +467,21 @@ export default function WorkerPage() {
                     <p className="text-[#5a7a5c] text-sm">✓ Shift in progress</p>
                   </div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="font-semibold text-[#1a2821]">Check Out</p>
+                    <p className="font-semibold text-[#1a2821]">{t.checkOut}</p>
                     <p className="text-xs text-[#6b7b6e]">Optional proof</p>
                   </div>
                   <button
                     onClick={() => handleCheckOut(selected.id)}
                     className="w-full bg-[#5a7a5c] text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#4a6a4c] transition-colors"
                   >
-                    → Job Completed
+                    → {t.done}
                   </button>
                 </div>
               )}
 
               {selected.status === 'done' && (
                 <div className="bg-[#f0f4f0] border-l-2 border-[#5a7a5c] rounded-r-xl px-4 py-3 flex items-center gap-2">
-                  <p className="text-[#5a7a5c] text-sm font-medium">Completed</p>
+                  <p className="text-[#5a7a5c] text-sm font-medium">{t.done}</p>
                   <SparkleIcon size={16} />
                 </div>
               )}
@@ -496,7 +489,7 @@ export default function WorkerPage() {
           </div>
         ) : (
           <div className="flex-1 bg-white rounded-2xl p-6 flex items-center justify-center text-[#6b7b6e]">
-            Select a shift to view details
+            {t.noShiftsToday}
           </div>
         )}
       </div>

@@ -20,6 +20,12 @@ function updateShift(shifts: Shift[], id: string, patch: Partial<Shift>): Shift[
   return shifts.map(s => s.id === id ? { ...s, ...patch } : s)
 }
 
+function getShiftDuration(shift: Shift): number | null {
+  if (!shift.checked_in_at || !shift.checked_out_at) return null
+  const ms = new Date(shift.checked_out_at).getTime() - new Date(shift.checked_in_at).getTime()
+  return Math.round(ms / 60000)
+}
+
 function makeShift(overrides: Partial<Shift> = {}): Shift {
   return {
     id: 'shift-1',
@@ -84,6 +90,26 @@ describe('location display', () => {
     const parts = shift.location.split(',')
     expect(parts[0].trim()).toBe('North Tower')
     expect(parts.slice(1).join(',').trim()).toBe('12th floor, East wing')
+  })
+})
+
+describe('getShiftDuration', () => {
+  it('returns duration in minutes between check-in and check-out', () => {
+    const shift = makeShift({
+      checked_in_at: '2024-09-24T08:00:00.000Z',
+      checked_out_at: '2024-09-24T09:30:00.000Z',
+    })
+    expect(getShiftDuration(shift)).toBe(90)
+  })
+
+  it('returns null if not checked in', () => {
+    const shift = makeShift()
+    expect(getShiftDuration(shift)).toBeNull()
+  })
+
+  it('returns null if checked in but not checked out', () => {
+    const shift = makeShift({ checked_in_at: '2024-09-24T08:00:00.000Z' })
+    expect(getShiftDuration(shift)).toBeNull()
   })
 })
 
