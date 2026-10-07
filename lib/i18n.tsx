@@ -65,6 +65,7 @@ type Messages = {
   voice: string
   scheduled: string
   // Worker
+  welcome: string
   yourShift: string
   checkIn: string
   checkOut: string
@@ -129,6 +130,7 @@ const translations: Record<Locale, Messages> = {
     photo: 'Photo',
     voice: 'Voice',
     scheduled: 'Scheduled',
+    welcome: 'Welcome',
     yourShift: 'Your shift',
     checkIn: 'Check in',
     checkOut: 'Check out',
@@ -191,6 +193,7 @@ const translations: Record<Locale, Messages> = {
     photo: 'Foto',
     voice: 'Sprachnotiz',
     scheduled: 'Geplant',
+    welcome: 'Willkommen',
     yourShift: 'Ihre Schicht',
     checkIn: 'Einchecken',
     checkOut: 'Auschecken',
@@ -253,6 +256,7 @@ const translations: Record<Locale, Messages> = {
     photo: 'Фото',
     voice: 'Голос',
     scheduled: 'Запланировано',
+    welcome: 'Добро пожаловать',
     yourShift: 'Ваша смена',
     checkIn: 'Начать смену',
     checkOut: 'Завершить смену',
@@ -315,6 +319,7 @@ const translations: Record<Locale, Messages> = {
     photo: 'Фото',
     voice: 'Голос',
     scheduled: 'Заплановано',
+    welcome: 'Ласкаво просимо',
     yourShift: 'Ваша зміна',
     checkIn: 'Почати зміну',
     checkOut: 'Завершити зміну',
@@ -377,6 +382,7 @@ const translations: Record<Locale, Messages> = {
     photo: 'Фота',
     voice: 'Голас',
     scheduled: 'Запланавана',
+    welcome: 'Сардэчна запрашаем',
     yourShift: 'Ваша змена',
     checkIn: 'Пачаць змену',
     checkOut: 'Завяршыць змену',
@@ -439,6 +445,7 @@ const translations: Record<Locale, Messages> = {
     photo: 'Zdjęcie',
     voice: 'Głos',
     scheduled: 'Zaplanowano',
+    welcome: 'Witaj',
     yourShift: 'Twoja zmiana',
     checkIn: 'Zamelduj się',
     checkOut: 'Wymelduj się',
@@ -501,6 +508,7 @@ const translations: Record<Locale, Messages> = {
     photo: 'Fotoğraf',
     voice: 'Ses',
     scheduled: 'Planlandı',
+    welcome: 'Hoş geldiniz',
     yourShift: 'Vardiyanz',
     checkIn: 'Vardiyaya başla',
     checkOut: 'Vardiyayı bitir',

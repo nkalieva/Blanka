@@ -227,8 +227,11 @@ export default function WorkerPage() {
         </p>
         <div className="flex items-end justify-between">
           <div>
+            <p className="text-[#5a7a5c] text-sm font-medium mb-1">{t.welcome}, {userName}!</p>
             <h1 className="text-3xl font-black text-[#1a2821]">{t.yourShift}</h1>
-            <p className="text-[#6b7b6e] text-sm mt-1">{t.today}</p>
+            <p className="text-[#6b7b6e] text-sm mt-1">
+              {new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
