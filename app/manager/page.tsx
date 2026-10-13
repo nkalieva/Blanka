@@ -57,6 +57,20 @@ export default function ManagerPage() {
   const router = useRouter()
   const { t } = useLang()
 
+  // Shared helper — fixes DRY: was copy-pasted 3 times before
+  async function fetchEnrichedShifts(supabase: ReturnType<typeof createClient>, mgrId: string): Promise<Shift[]> {
+    const { data: shiftsData, error } = await supabase
+      .from('shifts')
+      .select('*')
+      .eq('manager_id', mgrId)
+      .order('scheduled_start', { ascending: true })
+    if (error) throw new Error(error.message)
+    const { data: profiles } = await supabase.from('profiles').select('id, full_name, role')
+    const profileMap: Record<string, string> = {}
+    for (const p of profiles ?? []) profileMap[p.id] = p.full_name
+    return (shiftsData ?? []).map(s => ({ ...s, worker_name: profileMap[s.worker_id] ?? 'Unknown' }))
+  }
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -67,43 +81,29 @@ export default function ManagerPage() {
       const { data: profile } = await supabase.from('profiles').select('full_name').single()
       setUserName(profile?.full_name ?? '')
 
-      const { data: shiftsData } = await supabase
-        .from('shifts')
-        .select('*')
-        .eq('manager_id', user.id)
-        .order('scheduled_start', { ascending: true })
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, role, manager_id')
-
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name, role, manager_id')
       const workerList = (profiles ?? []).filter(p => p.role === 'worker')
       setWorkers(workerList)
       if (workerList.length > 0) setFormWorker(workerList[0].id)
 
-      const profileMap: Record<string, string> = {}
-      for (const p of profiles ?? []) profileMap[p.id] = p.full_name
-
-      const enriched = (shiftsData ?? []).map(s => ({
-        ...s,
-        worker_name: profileMap[s.worker_id] ?? 'Unknown',
-      }))
-
-      setShifts(enriched)
-      if (enriched.length > 0) setSelected(enriched[0])
+      try {
+        const enriched = await fetchEnrichedShifts(supabase, user.id)
+        setShifts(enriched)
+        if (enriched.length > 0) setSelected(enriched[0])
+      } catch (err) {
+        alert('Failed to load shifts: ' + (err as Error).message)
+      }
       setLoading(false)
     }
     load()
   }, [router])
 
   async function handleDeleteShift(shift: Shift) {
-    if (shift.status === 'done') {
-      alert(t.deleteDoneError)
-      return
-    }
+    if (shift.status === 'done') { alert(t.deleteDoneError); return }
     if (!confirm(t.deleteConfirm)) return
     const supabase = createClient()
-    await supabase.from('shifts').delete().eq('id', shift.id)
+    const { error } = await supabase.from('shifts').delete().eq('id', shift.id)
+    if (error) { alert('Delete failed: ' + error.message); return }
     const remaining = shifts.filter(s => s.id !== shift.id)
     setShifts(remaining)
     setSelected(remaining.length > 0 ? remaining[0] : null)
@@ -111,7 +111,7 @@ export default function ManagerPage() {
 
   async function handleCreateShift() {
     if (!formWorker || !formLocation.trim() || !formDate || !formTime) {
-      setFormError('Please fill in all fields')
+      setFormError(t.fillAllFields)
       return
     }
     setFormSaving(true)
@@ -125,17 +125,13 @@ export default function ManagerPage() {
       scheduled_start,
       status: 'upcoming',
     })
-    if (error) {
-      setFormError(error.message)
-      setFormSaving(false)
-      return
+    if (error) { setFormError(error.message); setFormSaving(false); return }
+    try {
+      const enriched = await fetchEnrichedShifts(supabase, managerId)
+      setShifts(enriched)
+    } catch (err) {
+      setFormError((err as Error).message)
     }
-    const { data: shiftsData } = await supabase.from('shifts').select('*').eq('manager_id', managerId).order('scheduled_start', { ascending: true })
-    const { data: profiles } = await supabase.from('profiles').select('id, full_name')
-    const profileMap: Record<string, string> = {}
-    for (const p of profiles ?? []) profileMap[p.id] = p.full_name
-    const enriched = (shiftsData ?? []).map(s => ({ ...s, worker_name: profileMap[s.worker_id] ?? 'Unknown' }))
-    setShifts(enriched)
     setShowForm(false)
     setFormLocation('')
     setFormDate('')
@@ -146,13 +142,13 @@ export default function ManagerPage() {
   async function handleRefresh() {
     setRefreshing(true)
     const supabase = createClient()
-    const { data: shiftsData } = await supabase.from('shifts').select('*').eq('manager_id', managerId).order('scheduled_start', { ascending: true })
-    const { data: profiles } = await supabase.from('profiles').select('id, full_name, role')
-    const profileMap: Record<string, string> = {}
-    for (const p of profiles ?? []) profileMap[p.id] = p.full_name
-    const enriched = (shiftsData ?? []).map(s => ({ ...s, worker_name: profileMap[s.worker_id] ?? 'Unknown' }))
-    setShifts(enriched)
-    setLastUpdated(new Date())
+    try {
+      const enriched = await fetchEnrichedShifts(supabase, managerId)
+      setShifts(enriched)
+      setLastUpdated(new Date())
+    } catch (err) {
+      alert('Refresh failed: ' + (err as Error).message)
+    }
     setRefreshing(false)
   }
 

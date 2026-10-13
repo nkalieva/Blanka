@@ -113,6 +113,29 @@ describe('getShiftDuration', () => {
   })
 })
 
+describe('archive filter', () => {
+  it('includes done shifts in archive regardless of date', () => {
+    const past = makeShift({ id: 'past', status: 'done', scheduled_start: '2024-01-01T08:00:00.000Z' })
+    const future = makeShift({ id: 'future', status: 'done', scheduled_start: '2099-01-01T08:00:00.000Z' })
+    const active = makeShift({ id: 'active', status: 'active' })
+    const archive = [past, future, active].filter(s => s.status === 'done')
+    expect(archive).toHaveLength(2)
+    expect(archive.map(s => s.id)).toContain('past')
+    expect(archive.map(s => s.id)).toContain('future')
+  })
+
+  it('excludes non-done shifts from archive', () => {
+    const shifts = [
+      makeShift({ id: '1', status: 'upcoming' }),
+      makeShift({ id: '2', status: 'active' }),
+      makeShift({ id: '3', status: 'done' }),
+    ]
+    const archive = shifts.filter(s => s.status === 'done')
+    expect(archive).toHaveLength(1)
+    expect(archive[0].id).toBe('3')
+  })
+})
+
 describe('job proof', () => {
   it('photo starts as null', () => {
     const shift = makeShift()
