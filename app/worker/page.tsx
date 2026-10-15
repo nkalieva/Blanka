@@ -221,13 +221,13 @@ export default function WorkerPage() {
           <BlankaLogo size={22} />
           <span className="font-bold text-[#1a2821]">Blanka</span>
         </div>
-        <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider flex items-center gap-2 mb-1">
-          <span className="h-px w-6 bg-[#5a7a5c] inline-block"></span>
-          Live Workspace
-        </p>
-        <div className="flex items-start justify-between">
-          <div className="flex-1 text-center">
-            <p className="text-[#1a2821] text-lg font-semibold mb-1">{t.welcome}</p>
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider flex items-center gap-2 mb-3">
+              <span className="h-px w-6 bg-[#5a7a5c] inline-block"></span>
+              Live Workspace
+            </p>
+            <p className="text-[#6b7b6e] text-sm font-medium">{t.welcome}</p>
             <h1 className="text-5xl font-black text-[#1a2821]">{userName}</h1>
             <p className="text-[#6b7b6e] text-sm mt-2">
               {new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
