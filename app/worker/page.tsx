@@ -46,7 +46,7 @@ export default function WorkerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: profile } = await supabase.from('profiles').select('full_name').single()
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
       setUserName(profile?.full_name ?? '')
 
       const todayStart = new Date()

@@ -25,7 +25,7 @@ export default function LoginPage() {
     setError('')
 
     const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (signInError) {
       setError(signInError.message)
@@ -36,6 +36,7 @@ export default function LoginPage() {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
+      .eq('id', authData.user.id)
       .single()
 
     router.push(profile?.role === 'manager' ? '/manager' : '/worker')
