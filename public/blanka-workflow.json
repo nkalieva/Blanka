@@ -1,0 +1,132 @@
+{
+  "name": "Blanka – Worker Chat Classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "blanka-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "blanka-chat-webhook"
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a message classifier for a cleaning service app called Blanka. Classify the worker's message into exactly one of three categories:\n- urgent: emergency, injury, can't access location, serious damage, needs immediate help\n- question: asking about shift details, location, schedule, or instructions\n- update: status update like finished, started, arrived, or checking in\n\nReply with ONLY one lowercase word: urgent, question, or update"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.body.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-openai",
+      "name": "Classify with AI",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "output": "={{ $json.message.content.toLowerCase().trim() }}",
+        "rules": {
+          "rules": [
+            {
+              "value": "urgent"
+            },
+            {
+              "value": "question"
+            }
+          ]
+        },
+        "fallbackOutput": 2
+      },
+      "id": "node-switch",
+      "name": "Route by Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"reply\": \"🚨 Your message has been marked as URGENT. A manager will contact you immediately. Stay safe!\", \"type\": \"urgent\" }",
+        "options": {}
+      },
+      "id": "node-respond-urgent",
+      "name": "Reply: Urgent",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 160]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"reply\": \"❓ Your question has been received. A manager will respond shortly.\", \"type\": \"question\" }",
+        "options": {}
+      },
+      "id": "node-respond-question",
+      "name": "Reply: Question",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"reply\": \"✅ Status update received. Great work, keep it up!\", \"type\": \"update\" }",
+        "options": {}
+      },
+      "id": "node-respond-update",
+      "name": "Reply: Update",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Classify with AI", "type": "main", "index": 0 }]
+      ]
+    },
+    "Classify with AI": {
+      "main": [
+        [{ "node": "Route by Type", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route by Type": {
+      "main": [
+        [{ "node": "Reply: Urgent", "type": "main", "index": 0 }],
+        [{ "node": "Reply: Question", "type": "main", "index": 0 }],
+        [{ "node": "Reply: Update", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -7,6 +7,7 @@ import { BlankaLogo, SparkleIcon } from '@/components/BlankaLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
 import { Camera, Mic, MapPin, Loader2, X } from 'lucide-react'
+import { FloatingChat } from '@/components/FloatingChat'
 
 type Shift = {
   id: string
@@ -496,6 +497,7 @@ export default function WorkerPage() {
           </div>
         )}
       </div>
+      <FloatingChat workerName={userName} />
     </div>
   )
 }
