@@ -19,10 +19,22 @@ type Shift = {
   checked_out_at: string | null
   photo_url: string | null
   voice_url: string | null
+  notes: string | null
 }
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })
+}
+
+function shiftCardBg(status: Shift['status'], isSelected: boolean) {
+  if (status === 'done') {
+    return isSelected
+      ? 'bg-green-50 border-green-200 shadow-sm'
+      : 'bg-green-50/60 border-transparent hover:border-green-200 hover:bg-green-50/80'
+  }
+  return isSelected
+    ? 'bg-red-50 border-red-200 shadow-sm'
+    : 'bg-red-50/50 border-transparent hover:border-red-200 hover:bg-red-50/70'
 }
 
 export default function WorkerPage() {
@@ -35,6 +47,9 @@ export default function WorkerPage() {
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [recording, setRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [noteText, setNoteText] = useState('')
+  const [noteSaving, setNoteSaving] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -50,23 +65,23 @@ export default function WorkerPage() {
       const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
       setUserName(profile?.full_name ?? '')
 
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
-
       const { data } = await supabase
         .from('shifts')
         .select('*')
         .eq('worker_id', user.id)
-        .gte('scheduled_start', todayStart.toISOString())
-        .order('scheduled_start', { ascending: true })
+        .order('scheduled_start', { ascending: false })
       const list = data ?? []
       setShifts(list)
-      const firstActive = list.find(s => s.status === 'active' || s.status === 'upcoming')
+      const firstActive = list.find(s => s.status === 'active') ?? list.find(s => s.status === 'upcoming')
       setSelected(firstActive ?? list[0] ?? null)
       setLoading(false)
     }
     load()
   }, [router])
+
+  useEffect(() => {
+    setNoteText(selected?.notes ?? '')
+  }, [selected?.id])
 
   function updateShift(id: string, patch: Partial<Shift>) {
     setShifts(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s))
@@ -190,6 +205,18 @@ export default function WorkerPage() {
     setUploading(false)
   }
 
+  async function handleNoteSave() {
+    if (!selected) return
+    setNoteSaving(true)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('shifts')
+      .update({ notes: noteText })
+      .eq('id', selected.id)
+    if (!error) updateShift(selected.id, { notes: noteText })
+    setNoteSaving(false)
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -216,20 +243,21 @@ export default function WorkerPage() {
           <img src={lightbox} alt="Job proof" className="max-h-screen max-w-full object-contain rounded-xl" />
         </div>
       )}
+
       {/* Header */}
-      <div className="px-8 pt-8 pb-4">
+      <div className="px-4 md:px-8 pt-6 md:pt-8 pb-4">
         <div className="flex items-center gap-2 mb-3">
           <BlankaLogo size={22} />
           <span className="font-bold text-[#1a2821]">Blanka</span>
         </div>
-        <div className="flex items-end justify-between">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider flex items-center gap-2 mb-3">
               <span className="h-px w-6 bg-[#5a7a5c] inline-block"></span>
               Live Workspace
             </p>
             <p className="text-[#6b7b6e] text-sm font-medium">{t.welcome}</p>
-            <h1 className="text-5xl font-black text-[#1a2821]">{userName}</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-[#1a2821]">{userName}</h1>
             <p className="text-[#6b7b6e] text-sm mt-2">
               {new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
@@ -243,13 +271,14 @@ export default function WorkerPage() {
         </div>
       </div>
 
-      <div className="h-px bg-[#e0e8e1] mx-8 mb-6"></div>
+      <div className="h-px bg-[#e0e8e1] mx-4 md:mx-8 mb-6"></div>
 
-      {/* Two-panel layout */}
-      <div className="flex gap-6 px-8 pb-8">
+      {/* Mobile: show list or detail */}
+      {/* Desktop: two-panel side by side */}
+      <div className="flex flex-col md:flex-row gap-6 px-4 md:px-8 pb-8">
 
-        {/* Left: shift list */}
-        <div className="w-72 shrink-0">
+        {/* Left: shift list — hidden on mobile when detail is open */}
+        <div className={`w-full md:w-72 md:shrink-0 ${showDetail ? 'hidden md:block' : 'block'}`}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider">{t.today}</p>
@@ -266,18 +295,22 @@ export default function WorkerPage() {
             {shifts.map(shift => (
               <button
                 key={shift.id}
-                onClick={() => setSelected(shift)}
-                className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                  selected?.id === shift.id
-                    ? 'bg-white border-[#c8d8ca] shadow-sm'
-                    : 'bg-white/60 border-transparent hover:border-[#e0e8e1] hover:bg-white/80'
-                }`}
+                onClick={() => { setSelected(shift); setShowDetail(true) }}
+                className="w-full text-left p-4 rounded-2xl border transition-all"
+                style={{
+                  backgroundColor: shift.status === 'done' ? '#dcfce7' : '#fee2e2',
+                  borderColor: selected?.id === shift.id
+                    ? (shift.status === 'done' ? '#86efac' : '#fca5a5')
+                    : 'transparent',
+                  boxShadow: selected?.id === shift.id ? '0 1px 3px rgba(0,0,0,0.08)' : undefined,
+                }}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[#1a2821]">{formatTime(shift.scheduled_start)}</span>
-                  <span className={`text-xs font-medium flex items-center gap-1 ${
-                    shift.status === 'active' ? 'text-[#5a7a5c]' : 'text-[#8a9b8d]'
-                  }`}>
+                  <span
+                    className="text-xs font-medium flex items-center gap-1"
+                    style={{ color: shift.status === 'done' ? '#16a34a' : shift.status === 'active' ? '#5a7a5c' : '#dc2626' }}
+                  >
                     ● {shift.status.toUpperCase()}
                   </span>
                 </div>
@@ -290,15 +323,24 @@ export default function WorkerPage() {
 
         {/* Right: shift detail */}
         {selected ? (
-          <div className="flex-1 bg-white rounded-2xl p-6">
+          <div className={`flex-1 bg-white rounded-2xl p-6 ${!showDetail ? 'hidden md:block' : 'block'}`}>
+            {/* Mobile back button */}
+            <button
+              className="md:hidden flex items-center gap-1 text-[#5a7a5c] text-sm mb-4"
+              onClick={() => setShowDetail(false)}
+            >
+              ← Back to shifts
+            </button>
+
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className={`text-xs font-medium uppercase tracking-wider flex items-center gap-1 mb-1 ${
-                  selected.status === 'active' ? 'text-[#5a7a5c]' : 'text-[#8a9b8d]'
+                  selected.status === 'done' ? 'text-green-600' :
+                  selected.status === 'active' ? 'text-[#5a7a5c]' : 'text-red-500'
                 }`}>
                   ● {selected.status === 'active' ? 'ACTIVE JOB' : selected.status.toUpperCase()}
                 </p>
-                <h2 className="text-3xl font-black text-[#1a2821]">{selected.location.split(',')[0]}</h2>
+                <h2 className="text-2xl md:text-3xl font-black text-[#1a2821]">{selected.location.split(',')[0]}</h2>
                 <p className="text-[#6b7b6e] text-sm flex items-center gap-1 mt-1">
                   <MapPin size={14} strokeWidth={1.5} className="shrink-0" />
                   {selected.location.split(',').slice(1).join(',').trim() || selected.location}
@@ -347,6 +389,7 @@ export default function WorkerPage() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   className="hidden"
                   onChange={handlePhotoUpload}
                 />
@@ -361,7 +404,7 @@ export default function WorkerPage() {
                     <img
                       src={selected.photo_url}
                       alt="Job proof"
-                      className="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => setLightbox(selected.photo_url)}
                     />
                     <button
@@ -404,7 +447,7 @@ export default function WorkerPage() {
                     <Mic size={16} strokeWidth={1.5} /> Check in first
                   </div>
                 ) : selected.voice_url ? (
-                  <div className="border border-[#5a7a5c] rounded-xl p-3">
+                  <div className="bg-white border border-[#5a7a5c] rounded-xl p-3">
                     <audio controls src={selected.voice_url} className="w-full h-8" />
                     <button
                       onClick={recording ? stopRecording : startRecording}
@@ -432,6 +475,38 @@ export default function WorkerPage() {
                       : <><Mic size={16} strokeWidth={1.5} /> {t.recordVoice}</>
                     }
                   </button>
+                )}
+              </div>
+
+              <div className="h-px bg-[#f0f4f0]"></div>
+
+              {/* Step 4: Note */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-[#1a2821]">Note</p>
+                  <p className="text-xs text-[#6b7b6e]">Optional</p>
+                </div>
+                {selected.status === 'upcoming' ? (
+                  <div className="border border-[#e0e8e1] rounded-xl py-3 flex items-center justify-center gap-2 text-[#c0c8c1] text-sm">
+                    Check in first
+                  </div>
+                ) : (
+                  <div>
+                    <textarea
+                      className="w-full text-sm border border-[#e0e8e1] rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-[#5a7a5c] text-[#1a2821] placeholder-[#b0bcb2] bg-white"
+                      rows={3}
+                      placeholder="Add a note about this shift..."
+                      value={noteText}
+                      onChange={e => setNoteText(e.target.value)}
+                    />
+                    <button
+                      onClick={handleNoteSave}
+                      disabled={noteSaving}
+                      className="mt-1.5 text-xs text-[#5a7a5c] hover:text-[#1a2821] transition-colors disabled:opacity-50"
+                    >
+                      {noteSaving ? 'Saving...' : '✓ Save note'}
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -484,8 +559,8 @@ export default function WorkerPage() {
               )}
 
               {selected.status === 'done' && (
-                <div className="bg-[#f0f4f0] border-l-2 border-[#5a7a5c] rounded-r-xl px-4 py-3 flex items-center gap-2">
-                  <p className="text-[#5a7a5c] text-sm font-medium">{t.done}</p>
+                <div className="bg-green-50 border-l-2 border-green-500 rounded-r-xl px-4 py-3 flex items-center gap-2">
+                  <p className="text-green-600 text-sm font-medium">{t.done}</p>
                   <SparkleIcon size={16} />
                 </div>
               )}

@@ -42,7 +42,10 @@ export function FloatingChat({ workerName }: { workerName: string }) {
       {open && (
         <div className="fixed bottom-20 right-6 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-[#e0e8e1] overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-[#1a2821]">
-            <span className="text-white font-semibold text-sm">Message Manager</span>
+            <div>
+              <span className="text-white font-semibold text-sm">Message Manager</span>
+              <p className="text-white/50 text-xs">Your message goes to your manager</p>
+            </div>
             <button onClick={() => { setOpen(false); setReply(null) }} className="text-white/70 hover:text-white">
               <X size={16} />
             </button>
@@ -56,7 +59,7 @@ export function FloatingChat({ workerName }: { workerName: string }) {
             <textarea
               className="w-full text-sm border border-[#e0e8e1] rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-[#5a7a5c] text-[#1a2821] placeholder-[#b0bcb2]"
               rows={3}
-              placeholder="Type your message..."
+              placeholder="Write to your manager (urgent, question, update)..."
               value={message}
               onChange={e => setMessage(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) handleSend() }}

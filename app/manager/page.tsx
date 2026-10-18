@@ -7,6 +7,7 @@ import { BlankaLogo } from '@/components/BlankaLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
 import { MapPin, Camera, Mic, X, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { RagChat } from '@/components/RagChat'
 
 type Shift = {
   id: string
@@ -18,6 +19,7 @@ type Shift = {
   checked_out_at: string | null
   photo_url: string | null
   voice_url: string | null
+  notes: string | null
   worker_name?: string
 }
 
@@ -26,9 +28,20 @@ function formatTime(iso: string) {
 }
 
 function statusColor(status: Shift['status']) {
+  if (status === 'done') return 'text-green-600'
   if (status === 'active') return 'text-[#5a7a5c]'
-  if (status === 'done') return 'text-[#8a9b8d]'
-  return 'text-[#8a9b8d]'
+  return 'text-red-500'
+}
+
+function shiftCardBg(status: Shift['status'], isSelected: boolean) {
+  if (status === 'done') {
+    return isSelected
+      ? 'bg-green-50 border-green-200 shadow-sm'
+      : 'bg-green-50/60 border-transparent hover:border-green-200 hover:bg-green-50/80'
+  }
+  return isSelected
+    ? 'bg-red-50 border-red-200 shadow-sm'
+    : 'bg-red-50/50 border-transparent hover:border-red-200 hover:bg-red-50/70'
 }
 
 type Worker = { id: string; full_name: string }
@@ -266,7 +279,7 @@ export default function ManagerPage() {
         </div>
       )}
       {/* Header */}
-      <div className="px-8 pt-8 pb-4">
+      <div className="px-4 md:px-8 pt-6 md:pt-8 pb-4">
         <div className="flex items-center gap-2 mb-3">
           <BlankaLogo size={22} />
           <span className="font-bold text-[#1a2821]">Blanka</span>
@@ -310,10 +323,10 @@ export default function ManagerPage() {
         </div>
       </div>
 
-      <div className="h-px bg-[#e0e8e1] mx-8 mb-6"></div>
+      <div className="h-px bg-[#e0e8e1] mx-4 md:mx-8 mb-6"></div>
 
       {/* Stats row */}
-      <div className="px-8 mb-6 grid grid-cols-4 gap-3">
+      <div className="px-4 md:px-8 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         {(['all', 'upcoming', 'active', 'archive'] as const).map(key => (
           <button
             key={key}
@@ -332,11 +345,16 @@ export default function ManagerPage() {
         ))}
       </div>
 
+      {/* Knowledge Base RAG */}
+      <div className="px-4 md:px-8 mb-6">
+        <RagChat />
+      </div>
+
       {/* Two-panel layout */}
-      <div className="flex gap-6 px-8 pb-8">
+      <div className="flex flex-col md:flex-row gap-6 px-4 md:px-8 pb-8">
 
         {/* Left: shift list */}
-        <div className="w-72 shrink-0">
+        <div className="w-full md:w-72 md:shrink-0">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider">
@@ -441,15 +459,21 @@ export default function ManagerPage() {
               <button
                 key={shift.id}
                 onClick={() => setSelected(shift)}
-                className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                  selected?.id === shift.id
-                    ? 'bg-white border-[#c8d8ca] shadow-sm'
-                    : 'bg-white/60 border-transparent hover:border-[#e0e8e1] hover:bg-white/80'
-                }`}
+                className="w-full text-left p-4 rounded-2xl border transition-all"
+                style={{
+                  backgroundColor: shift.status === 'done' ? '#dcfce7' : '#fee2e2',
+                  borderColor: selected?.id === shift.id
+                    ? (shift.status === 'done' ? '#86efac' : '#fca5a5')
+                    : 'transparent',
+                  boxShadow: selected?.id === shift.id ? '0 1px 3px rgba(0,0,0,0.08)' : undefined,
+                }}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[#1a2821]">{formatTime(shift.scheduled_start)}</span>
-                  <span className={`text-xs font-medium flex items-center gap-1 ${statusColor(shift.status)}`}>
+                  <span
+                    className="text-xs font-medium flex items-center gap-1"
+                    style={{ color: shift.status === 'done' ? '#16a34a' : shift.status === 'active' ? '#5a7a5c' : '#dc2626' }}
+                  >
                     ● {shift.status.toUpperCase()}
                   </span>
                 </div>
@@ -570,6 +594,14 @@ export default function ManagerPage() {
                     <p className="text-xs font-medium text-[#1a2821]">No voice note</p>
                     <p className="text-xs text-[#6b7b6e]">Not submitted yet</p>
                   </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selected.notes && (
+                <div className="mt-3 border border-[#e0e8e1] rounded-xl p-3">
+                  <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider mb-1">Note</p>
+                  <p className="text-sm text-[#1a2821] whitespace-pre-wrap">{selected.notes}</p>
                 </div>
               )}
             </div>
