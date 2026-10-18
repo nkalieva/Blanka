@@ -18,6 +18,7 @@ type Shift = {
   checked_in_at: string | null
   checked_out_at: string | null
   photo_url: string | null
+  photo_urls: string[] | null
   voice_url: string | null
   notes: string | null
   worker_name?: string
@@ -560,24 +561,31 @@ export default function ManagerPage() {
             <div>
               <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider mb-3">Job Proof</p>
 
-              {/* Photo */}
-              {selected.photo_url ? (
-                <div className="rounded-xl overflow-hidden border border-[#5a7a5c] mb-3 cursor-pointer" onClick={() => setLightbox(selected.photo_url)}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={selected.photo_url} alt="Job proof" className="w-full h-48 object-cover hover:opacity-90 transition-opacity" />
-                  <div className="px-3 py-2 flex items-center gap-1 text-xs text-[#5a7a5c]">
-                    <Camera size={12} strokeWidth={1.5} /> Photo uploaded · click to enlarge
+              {/* Photos grid */}
+              {(() => {
+                const photos = selected.photo_urls ?? (selected.photo_url ? [selected.photo_url] : [])
+                return photos.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {photos.map((url, i) => (
+                      <div key={i} className="w-20 h-20 rounded-xl overflow-hidden border border-[#5a7a5c] cursor-pointer shrink-0" onClick={() => setLightbox(url)}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+                      </div>
+                    ))}
+                    <p className="w-full text-xs text-[#6b7b6e] mt-1 flex items-center gap-1">
+                      <Camera size={11} strokeWidth={1.5} /> {photos.length} photo{photos.length !== 1 ? 's' : ''} · click to enlarge
+                    </p>
                   </div>
-                </div>
-              ) : (
-                <div className="border border-[#e0e8e1] rounded-xl p-3 flex items-start gap-2 mb-3">
-                  <Camera size={14} strokeWidth={1.5} className="text-[#8a9b8d] mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-[#1a2821]">No photo uploaded</p>
-                    <p className="text-xs text-[#6b7b6e]">Not submitted yet</p>
+                ) : (
+                  <div className="border border-[#e0e8e1] rounded-xl p-3 flex items-start gap-2 mb-3">
+                    <Camera size={14} strokeWidth={1.5} className="text-[#8a9b8d] mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-[#1a2821]">No photo uploaded</p>
+                      <p className="text-xs text-[#6b7b6e]">Not submitted yet</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
               {/* Voice */}
               {selected.voice_url ? (

@@ -18,6 +18,7 @@ type Shift = {
   checked_in_at: string | null
   checked_out_at: string | null
   photo_url: string | null
+  photo_urls: string[] | null
   voice_url: string | null
   notes: string | null
 }
@@ -106,6 +107,9 @@ export default function WorkerPage() {
     const file = e.target.files?.[0]
     if (!file || !selected) return
 
+    const existing = selected.photo_urls ?? (selected.photo_url ? [selected.photo_url] : [])
+    if (existing.length >= 10) { setUploadError('Max 10 photos'); return }
+
     setUploading(true)
     setUploadError(null)
     const supabase = createClient()
@@ -127,19 +131,29 @@ export default function WorkerPage() {
       .from('shift-photos')
       .getPublicUrl(path)
 
+    const newUrls = [...existing, publicUrl]
     const { error: dbError } = await supabase
       .from('shifts')
-      .update({ photo_url: publicUrl })
+      .update({ photo_urls: newUrls })
       .eq('id', selected.id)
 
     if (dbError) {
       setUploadError('Save failed: ' + dbError.message)
     } else {
-      updateShift(selected.id, { photo_url: publicUrl })
+      updateShift(selected.id, { photo_urls: newUrls })
     }
 
     setUploading(false)
     e.target.value = ''
+  }
+
+  async function handlePhotoRemove(url: string) {
+    if (!selected) return
+    const existing = selected.photo_urls ?? (selected.photo_url ? [selected.photo_url] : [])
+    const newUrls = existing.filter(u => u !== url)
+    const supabase = createClient()
+    await supabase.from('shifts').update({ photo_urls: newUrls }).eq('id', selected.id)
+    updateShift(selected.id, { photo_urls: newUrls })
   }
 
   async function startRecording() {
@@ -394,43 +408,50 @@ export default function WorkerPage() {
                   onChange={handlePhotoUpload}
                 />
 
-                {selected.status === 'upcoming' ? (
-                  <div className="border border-[#e0e8e1] rounded-xl py-3 flex items-center justify-center gap-2 text-[#c0c8c1] text-sm">
-                    <Camera size={16} strokeWidth={1.5} /> Check in first
-                  </div>
-                ) : selected.photo_url ? (
-                  <div className="relative rounded-xl overflow-hidden border border-[#e0e8e1]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={selected.photo_url}
-                      alt="Job proof"
-                      className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => setLightbox(selected.photo_url)}
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute bottom-2 right-2 bg-white/90 text-[#1a2821] text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-white transition-colors"
-                    >
-                      <Camera size={12} strokeWidth={1.5} /> Replace
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="w-full border border-[#e0e8e1] rounded-xl py-3 flex items-center justify-center gap-2 text-[#8a9b8d] text-sm hover:bg-[#f9fbf9] transition-colors disabled:opacity-50"
-                    >
-                      {uploading
-                        ? <><Loader2 size={16} className="animate-spin" /> {t.saving}</>
-                        : <><Camera size={16} strokeWidth={1.5} /> {t.uploadPhoto}</>
-                      }
-                    </button>
-                    {uploadError && (
-                      <p className="text-xs text-red-500 mt-1">{uploadError}</p>
-                    )}
-                  </>
-                )}
+                {(() => {
+                  const photos = selected.photo_urls ?? (selected.photo_url ? [selected.photo_url] : [])
+                  return selected.status === 'upcoming' ? (
+                    <div className="border border-[#e0e8e1] rounded-xl py-3 flex items-center justify-center gap-2 text-[#c0c8c1] text-sm">
+                      <Camera size={16} strokeWidth={1.5} /> Check in first
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {photos.map((url, i) => (
+                          <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#e0e8e1] shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={url}
+                              alt={`Photo ${i + 1}`}
+                              className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => setLightbox(url)}
+                            />
+                            <button
+                              onClick={() => handlePhotoRemove(url)}
+                              className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-black/80 transition-colors"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                        {photos.length < 10 && (
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="w-20 h-20 rounded-xl border border-dashed border-[#c0c8c1] flex flex-col items-center justify-center gap-1 text-[#8a9b8d] hover:bg-[#f9fbf9] transition-colors disabled:opacity-50 shrink-0"
+                          >
+                            {uploading
+                              ? <Loader2 size={16} className="animate-spin" />
+                              : <Camera size={16} strokeWidth={1.5} />
+                            }
+                            <span className="text-xs">{photos.length === 0 ? 'Add' : `${photos.length}/10`}</span>
+                          </button>
+                        )}
+                      </div>
+                      {uploadError && <p className="text-xs text-red-500 mt-1">{uploadError}</p>}
+                    </>
+                  )
+                })()}
               </div>
 
               <div className="h-px bg-[#f0f4f0]"></div>
