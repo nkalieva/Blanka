@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { BlankaLogo, SparkleIcon } from '@/components/BlankaLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
-import { Camera, Mic, MapPin, Loader2, X } from 'lucide-react'
+import { Camera, Mic, MapPin, Loader2, X, Trash2 } from 'lucide-react'
 import { FloatingChat } from '@/components/FloatingChat'
 import { VoicePlayer } from '@/components/VoicePlayer'
 
@@ -219,6 +219,13 @@ export default function WorkerPage() {
     if (!dbError) updateShift(selected.id, { voice_url: publicUrl })
     else setUploadError('Save failed: ' + dbError.message)
     setUploading(false)
+  }
+
+  async function handleVoiceDelete() {
+    if (!selected) return
+    const supabase = createClient()
+    await supabase.from('shifts').update({ voice_url: null }).eq('id', selected.id)
+    updateShift(selected.id, { voice_url: null })
   }
 
   async function handleNoteSave() {
@@ -472,12 +479,21 @@ export default function WorkerPage() {
                 ) : selected.voice_url ? (
                   <div className="space-y-2">
                     <VoicePlayer src={selected.voice_url} />
-                    <button
-                      onClick={recording ? stopRecording : startRecording}
-                      className="text-xs text-[#6b7b6e] hover:text-[#1a2821] flex items-center gap-1"
-                    >
-                      <Mic size={12} strokeWidth={1.5} /> {t.recordVoice}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={recording ? stopRecording : startRecording}
+                        className="flex items-center gap-1.5 text-xs text-[#5a7a5c] border border-[#c8d8ca] rounded-lg px-3 py-1.5 hover:bg-[#f0f4f0] transition-colors"
+                      >
+                        <Mic size={12} strokeWidth={1.5} />
+                        {recording ? `Recording ${recordingSeconds}s · stop` : 'Re-record'}
+                      </button>
+                      <button
+                        onClick={handleVoiceDelete}
+                        className="flex items-center gap-1.5 text-xs text-red-400 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 size={12} /> Delete
+                      </button>
+                    </div>
                   </div>
                 ) : recording ? (
                   <button
