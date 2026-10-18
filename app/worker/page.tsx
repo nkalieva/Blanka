@@ -7,6 +7,7 @@ import { BlankaLogo, SparkleIcon } from '@/components/BlankaLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
 import { Camera, Mic, MapPin, Loader2, X, Trash2 } from 'lucide-react'
+import confetti from 'canvas-confetti'
 import { FloatingChat } from '@/components/FloatingChat'
 import { VoicePlayer } from '@/components/VoicePlayer'
 
@@ -103,6 +104,15 @@ export default function WorkerPage() {
     const now = new Date().toISOString()
     await supabase.from('shifts').update({ status: 'done', checked_out_at: now }).eq('id', id)
     updateShift(id, { status: 'done', checked_out_at: now })
+
+    const duration = 3000
+    const end = Date.now() + duration
+    const colors = ['#5a7a5c', '#86efac', '#1a2821', '#fbbf24', '#f472b6', '#60a5fa']
+    ;(function frame() {
+      confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 }, colors })
+      confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors })
+      if (Date.now() < end) requestAnimationFrame(frame)
+    })()
   }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
