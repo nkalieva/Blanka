@@ -8,6 +8,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
 import { Camera, Mic, MapPin, Loader2, X } from 'lucide-react'
 import { FloatingChat } from '@/components/FloatingChat'
+import { VoicePlayer } from '@/components/VoicePlayer'
 
 type Shift = {
   id: string
@@ -26,6 +27,7 @@ type Shift = {
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })
 }
+
 
 function shiftCardBg(status: Shift['status'], isSelected: boolean) {
   if (status === 'done') {
@@ -468,11 +470,11 @@ export default function WorkerPage() {
                     <Mic size={16} strokeWidth={1.5} /> Check in first
                   </div>
                 ) : selected.voice_url ? (
-                  <div className="bg-white border border-[#5a7a5c] rounded-xl p-3">
-                    <audio controls src={selected.voice_url} className="w-full h-8" />
+                  <div className="space-y-2">
+                    <VoicePlayer src={selected.voice_url} />
                     <button
                       onClick={recording ? stopRecording : startRecording}
-                      className="mt-2 text-xs text-[#6b7b6e] hover:text-[#1a2821] flex items-center gap-1"
+                      className="text-xs text-[#6b7b6e] hover:text-[#1a2821] flex items-center gap-1"
                     >
                       <Mic size={12} strokeWidth={1.5} /> {t.recordVoice}
                     </button>

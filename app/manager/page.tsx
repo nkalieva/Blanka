@@ -8,6 +8,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
 import { MapPin, Camera, Mic, X, Plus, Trash2, RefreshCw } from 'lucide-react'
 import { RagChat } from '@/components/RagChat'
+import { VoicePlayer } from '@/components/VoicePlayer'
 
 type Shift = {
   id: string
@@ -589,11 +590,11 @@ export default function ManagerPage() {
 
               {/* Voice */}
               {selected.voice_url ? (
-                <div className="border border-[#5a7a5c] rounded-xl p-3">
-                  <div className="flex items-center gap-1 text-xs text-[#5a7a5c] mb-2">
-                    <Mic size={12} strokeWidth={1.5} /> Voice note recorded
-                  </div>
-                  <audio controls src={selected.voice_url} className="w-full h-8" />
+                <div className="space-y-1">
+                  <p className="flex items-center gap-1 text-xs text-[#5a7a5c] mb-1">
+                    <Mic size={11} strokeWidth={1.5} /> Voice note recorded
+                  </p>
+                  <VoicePlayer src={selected.voice_url} />
                 </div>
               ) : (
                 <div className="border border-[#e0e8e1] rounded-xl p-3 flex items-start gap-2">
