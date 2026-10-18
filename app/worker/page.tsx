@@ -14,6 +14,7 @@ import { VoicePlayer } from '@/components/VoicePlayer'
 type Shift = {
   id: string
   worker_id: string
+  manager_id: string
   location: string
   status: 'upcoming' | 'active' | 'done' | 'cancelled'
   scheduled_start: string
@@ -69,9 +70,8 @@ export default function WorkerPage() {
       if (!user) { router.push('/login'); return }
 
       setWorkerId(user.id)
-      const { data: profile } = await supabase.from('profiles').select('full_name, manager_id').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
       setUserName(profile?.full_name ?? '')
-      setManagerId(profile?.manager_id ?? '')
 
       const { data } = await supabase
         .from('shifts')
@@ -82,6 +82,9 @@ export default function WorkerPage() {
       setShifts(list)
       const firstActive = list.find(s => s.status === 'active') ?? list.find(s => s.status === 'upcoming')
       setSelected(firstActive ?? list[0] ?? null)
+      // get manager_id from shifts (more reliable than profile)
+      const mgrId = list.find(s => s.manager_id)?.manager_id ?? ''
+      setManagerId(mgrId)
       setLoading(false)
     }
     load()
