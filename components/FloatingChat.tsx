@@ -2,12 +2,21 @@
 
 import { useState } from 'react'
 import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 type Reply = { reply: string; type: 'urgent' | 'question' | 'update' }
 
 const WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL ?? ''
 
-export function FloatingChat({ workerName }: { workerName: string }) {
+export function FloatingChat({
+  workerName,
+  workerId,
+  managerId,
+}: {
+  workerName: string
+  workerId: string
+  managerId: string
+}) {
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -17,18 +26,35 @@ export function FloatingChat({ workerName }: { workerName: string }) {
     if (!message.trim() || sending) return
     setSending(true)
     setReply(null)
-    try {
-      const res = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message.trim(), worker_name: workerName }),
-      })
-      const data: Reply = await res.json()
-      setReply(data)
-      setMessage('')
-    } catch {
-      setReply({ reply: 'Could not reach the server. Please try again.', type: 'update' })
+
+    let classified: Reply = { reply: 'Message sent to your manager.', type: 'update' }
+
+    if (WEBHOOK_URL) {
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message.trim(), worker_name: workerName }),
+        })
+        classified = await res.json()
+      } catch {
+        classified = { reply: 'Could not reach the server. Message saved locally.', type: 'update' }
+      }
     }
+
+    if (workerId && managerId) {
+      const supabase = createClient()
+      await supabase.from('messages').insert({
+        worker_id: workerId,
+        worker_name: workerName,
+        manager_id: managerId,
+        message: message.trim(),
+        type: classified.type,
+      })
+    }
+
+    setReply(classified)
+    setMessage('')
     setSending(false)
   }
 
@@ -77,7 +103,7 @@ export function FloatingChat({ workerName }: { workerName: string }) {
       )}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 bg-[#1a2821] text-white rounded-full w-13 h-13 flex items-center justify-center shadow-lg hover:bg-[#2a3831] transition-colors"
+        className="fixed bottom-6 right-6 z-50 bg-[#1a2821] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2a3831] transition-colors"
         style={{ width: 52, height: 52 }}
       >
         {open ? <X size={22} /> : <MessageCircle size={22} />}

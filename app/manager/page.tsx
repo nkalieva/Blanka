@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { BlankaLogo } from '@/components/BlankaLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
-import { MapPin, Camera, Mic, X, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { MapPin, Camera, Mic, X, Plus, Trash2, RefreshCw, MessageSquare } from 'lucide-react'
 import { RagChat } from '@/components/RagChat'
 import { VoicePlayer } from '@/components/VoicePlayer'
 
@@ -69,6 +69,8 @@ export default function ManagerPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
   const [openYears, setOpenYears] = useState<Record<string, boolean>>({})
+  const [messages, setMessages] = useState<{ id: string; worker_name: string; message: string; type: string; created_at: string; read: boolean }[]>([])
+  const [showInbox, setShowInbox] = useState(false)
   const router = useRouter()
   const { t } = useLang()
 
@@ -108,10 +110,24 @@ export default function ManagerPage() {
       } catch (err) {
         alert('Failed to load shifts: ' + (err as Error).message)
       }
+
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('manager_id', user.id)
+        .order('created_at', { ascending: false })
+      setMessages(msgs ?? [])
+
       setLoading(false)
     }
     load()
   }, [router])
+
+  async function markAllRead(mgrId: string) {
+    const supabase = createClient()
+    await supabase.from('messages').update({ read: true }).eq('manager_id', mgrId).eq('read', false)
+    setMessages(prev => prev.map(m => ({ ...m, read: true })))
+  }
 
   async function handleDeleteShift(shift: Shift) {
     if (shift.status === 'done') { alert(t.deleteDoneError); return }
@@ -317,6 +333,18 @@ export default function ManagerPage() {
               <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? t.updating : lastUpdated.toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })}
             </button>
+            <button
+              onClick={() => { setShowInbox(true); markAllRead(managerId) }}
+              className="relative flex items-center gap-1.5 text-[#6b7b6e] text-sm px-3 py-2 hover:text-[#1a2821] transition-colors"
+            >
+              <MessageSquare size={16} />
+              Inbox
+              {messages.filter(m => !m.read).length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {messages.filter(m => !m.read).length}
+                </span>
+              )}
+            </button>
             <LanguageSwitcher />
             <button onClick={handleSignOut} className="text-[#6b7b6e] text-sm px-3 py-2 hover:text-[#1a2821] transition-colors">
               {t.signOut}
@@ -324,6 +352,46 @@ export default function ManagerPage() {
           </div>
         </div>
       </div>
+
+      {/* Inbox modal */}
+      {showInbox && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-end p-4 md:p-8" onClick={() => setShowInbox(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#e0e8e1]">
+              <div>
+                <h2 className="font-bold text-[#1a2821]">Worker Messages</h2>
+                <p className="text-xs text-[#6b7b6e]">{messages.length} messages</p>
+              </div>
+              <button onClick={() => setShowInbox(false)} className="text-[#6b7b6e] hover:text-[#1a2821]"><X size={18} /></button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-[#6b7b6e]">
+                  <MessageSquare size={28} strokeWidth={1.5} className="mb-2 opacity-40" />
+                  <p className="text-sm">No messages yet</p>
+                </div>
+              ) : messages.map(msg => (
+                <div key={msg.id} className="px-5 py-3 border-b border-[#f0f4f0] last:border-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-sm text-[#1a2821]">{msg.worker_name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        msg.type === 'urgent' ? 'bg-red-100 text-red-600' :
+                        msg.type === 'question' ? 'bg-blue-100 text-blue-600' :
+                        'bg-green-100 text-green-600'
+                      }`}>{msg.type}</span>
+                      <span className="text-[10px] text-[#9aaa9d]">
+                        {new Date(msg.created_at).toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-[#4a5c4d]">{msg.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="h-px bg-[#e0e8e1] mx-4 md:mx-8 mb-6"></div>
 

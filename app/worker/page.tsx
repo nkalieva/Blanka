@@ -45,6 +45,8 @@ export default function WorkerPage() {
   const [shifts, setShifts] = useState<Shift[]>([])
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
+  const [workerId, setWorkerId] = useState('')
+  const [managerId, setManagerId] = useState('')
   const [selected, setSelected] = useState<Shift | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -66,8 +68,10 @@ export default function WorkerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      setWorkerId(user.id)
+      const { data: profile } = await supabase.from('profiles').select('full_name, manager_id').eq('id', user.id).single()
       setUserName(profile?.full_name ?? '')
+      setManagerId(profile?.manager_id ?? '')
 
       const { data } = await supabase
         .from('shifts')
@@ -621,7 +625,7 @@ export default function WorkerPage() {
           </div>
         )}
       </div>
-      <FloatingChat workerName={userName} />
+      <FloatingChat workerName={userName} workerId={workerId} managerId={managerId} />
     </div>
   )
 }
