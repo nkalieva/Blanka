@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { BlankaLogo, SparkleIcon } from '@/components/BlankaLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLang } from '@/lib/i18n'
-import { Camera, Mic, MapPin, Loader2, X, Trash2 } from 'lucide-react'
+import { Camera, Mic, MapPin, Loader2, X, Trash2, CalendarClock, BookOpen, LogOut } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { FloatingChat } from '@/components/FloatingChat'
 import { VoicePlayer } from '@/components/VoicePlayer'
@@ -31,18 +31,6 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-DE', { hour: '2-digit', minute: '2-digit' })
 }
 
-
-function shiftCardBg(status: Shift['status'], isSelected: boolean) {
-  if (status === 'done') {
-    return isSelected
-      ? 'bg-green-50 border-green-200 shadow-sm'
-      : 'bg-green-50/60 border-transparent hover:border-green-200 hover:bg-green-50/80'
-  }
-  return isSelected
-    ? 'bg-red-50 border-red-200 shadow-sm'
-    : 'bg-red-50/50 border-transparent hover:border-red-200 hover:bg-red-50/70'
-}
-
 export default function WorkerPage() {
   const [shifts, setShifts] = useState<Shift[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,6 +46,7 @@ export default function WorkerPage() {
   const [noteText, setNoteText] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
+  const [activeTab, setActiveTab] = useState<'shifts' | 'ai'>('shifts')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -83,7 +72,6 @@ export default function WorkerPage() {
       setShifts(list)
       const firstActive = list.find(s => s.status === 'active') ?? list.find(s => s.status === 'upcoming')
       setSelected(firstActive ?? list[0] ?? null)
-      // get manager_id from shifts (more reliable than profile)
       const mgrId = list.find(s => s.manager_id)?.manager_id ?? ''
       setManagerId(mgrId)
       setLoading(false)
@@ -264,6 +252,8 @@ export default function WorkerPage() {
     router.push('/login')
   }
 
+  const today = new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })
+
   if (loading) return (
     <div className="min-h-screen bg-[#f0f4f0] flex items-center justify-center text-[#6b7b6e]">
       {t.loading}
@@ -271,7 +261,8 @@ export default function WorkerPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#f0f4f0]">
+    <div className="min-h-screen bg-[#f0f4f0] pb-16 md:pb-0">
+      {/* Lightbox */}
       {lightbox && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
@@ -285,8 +276,30 @@ export default function WorkerPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="px-4 md:px-8 pt-6 md:pt-8 pb-4">
+      {/* ── MOBILE HEADER ── */}
+      <div className="md:hidden sticky top-0 z-30 bg-[#f0f4f0] border-b border-[#e0e8e1]">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <BlankaLogo size={20} />
+            <div>
+              <p className="font-black text-[#1a2821] text-base leading-tight">{userName}</p>
+              <p className="text-[#6b7b6e] text-xs">{today}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <button
+              onClick={handleSignOut}
+              className="w-8 h-8 flex items-center justify-center rounded-full border border-[#e0e8e1] bg-white text-[#6b7b6e]"
+            >
+              <LogOut size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DESKTOP HEADER ── */}
+      <div className="hidden md:block px-8 pt-8 pb-4">
         <div className="flex items-center gap-2 mb-3">
           <BlankaLogo size={22} />
           <span className="font-bold text-[#1a2821]">Blanka</span>
@@ -298,10 +311,8 @@ export default function WorkerPage() {
               Live Workspace
             </p>
             <p className="text-[#6b7b6e] text-sm font-medium">{t.welcome}</p>
-            <h1 className="text-4xl md:text-5xl font-black text-[#1a2821]">{userName}</h1>
-            <p className="text-[#6b7b6e] text-sm mt-2">
-              {new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
+            <h1 className="text-5xl font-black text-[#1a2821]">{userName}</h1>
+            <p className="text-[#6b7b6e] text-sm mt-2">{today}</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <LanguageSwitcher />
@@ -312,25 +323,22 @@ export default function WorkerPage() {
         </div>
       </div>
 
-      <div className="h-px bg-[#e0e8e1] mx-4 md:mx-8 mb-6"></div>
+      <div className="h-px bg-[#e0e8e1] mx-8 mb-6 hidden md:block"></div>
 
-      {/* Knowledge Base */}
-      <div className="px-4 md:px-8 mb-6">
+      {/* ── KNOWLEDGE BASE (desktop: always; mobile: only on AI tab) ── */}
+      <div className={`px-4 md:px-8 mb-4 md:mb-6 ${activeTab !== 'ai' ? 'hidden md:block' : 'block'}`}>
         <RagChat />
       </div>
 
-      {/* Mobile: show list or detail */}
-      {/* Desktop: two-panel side by side */}
-      <div className="flex flex-col md:flex-row gap-6 px-4 md:px-8 pb-8">
+      {/* ── SHIFTS (desktop: always; mobile: only on Shifts tab) ── */}
+      <div className={`px-4 md:px-8 pb-4 md:pb-8 gap-6 flex-col md:flex-row ${activeTab !== 'shifts' ? 'hidden md:flex' : 'flex'}`}>
 
-        {/* Left: shift list — hidden on mobile when detail is open */}
+        {/* Left: shift list */}
         <div className={`w-full md:w-72 md:shrink-0 ${showDetail ? 'hidden md:block' : 'block'}`}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-xs font-medium text-[#5a7a5c] uppercase tracking-wider">{t.today}</p>
-              <p className="text-xs text-[#6b7b6e]">
-                {new Date().toLocaleDateString('en-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
+              <p className="text-xs text-[#6b7b6e]">{today}</p>
             </div>
             <span className="text-xs border border-[#e0e8e1] bg-white rounded px-2 py-1 text-[#6b7b6e]">
               {shifts.length} jobs
@@ -369,7 +377,7 @@ export default function WorkerPage() {
 
         {/* Right: shift detail */}
         {selected ? (
-          <div className={`flex-1 bg-white rounded-2xl p-6 ${!showDetail ? 'hidden md:block' : 'block'}`}>
+          <div className={`flex-1 bg-white rounded-2xl p-5 md:p-6 ${!showDetail ? 'hidden md:block' : 'block'}`}>
             {/* Mobile back button */}
             <button
               className="md:hidden flex items-center gap-1 text-[#5a7a5c] text-sm mb-4"
@@ -392,13 +400,13 @@ export default function WorkerPage() {
                   {selected.location.split(',').slice(1).join(',').trim() || selected.location}
                 </p>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0 ml-3">
                 <p className="text-2xl font-bold text-[#1a2821]">{formatTime(selected.scheduled_start)}</p>
                 <p className="text-xs text-[#6b7b6e]">{t.scheduled}</p>
               </div>
             </div>
 
-            <div className="h-px bg-[#f0f4f0] mb-6"></div>
+            <div className="h-px bg-[#f0f4f0] mb-5"></div>
 
             <div className="space-y-5">
               {/* Step 1: Check In */}
@@ -634,6 +642,35 @@ export default function WorkerPage() {
           </div>
         )}
       </div>
+
+      {/* ── BOTTOM TAB BAR — mobile only ── */}
+      <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-[#e0e8e1] z-40">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab('shifts')}
+            className="flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors relative"
+            style={{ color: activeTab === 'shifts' ? '#1a2821' : '#9aaa9d' }}
+          >
+            {activeTab === 'shifts' && (
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full" style={{ background: '#1a2821' }} />
+            )}
+            <CalendarClock size={22} strokeWidth={1.5} />
+            <span className="text-[10px] font-semibold tracking-wide">Shifts</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className="flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors relative"
+            style={{ color: activeTab === 'ai' ? '#1a2821' : '#9aaa9d' }}
+          >
+            {activeTab === 'ai' && (
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full" style={{ background: '#1a2821' }} />
+            )}
+            <BookOpen size={22} strokeWidth={1.5} />
+            <span className="text-[10px] font-semibold tracking-wide">Ask AI</span>
+          </button>
+        </div>
+      </nav>
+
       <FloatingChat workerName={userName} workerId={workerId} managerId={managerId} />
     </div>
   )

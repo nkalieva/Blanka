@@ -66,7 +66,7 @@ export function FloatingChat({
   return (
     <>
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-[#e0e8e1] overflow-hidden">
+        <div className="fixed bottom-[136px] md:bottom-20 right-6 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-[#e0e8e1] overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-[#1a2821]">
             <div>
               <span className="text-white font-semibold text-sm">Message Manager</span>
@@ -103,7 +103,7 @@ export function FloatingChat({
       )}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 bg-[#1a2821] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2a3831] transition-colors"
+        className="fixed bottom-[72px] md:bottom-6 right-6 z-50 bg-[#1a2821] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2a3831] transition-colors"
         style={{ width: 52, height: 52 }}
       >
         {open ? <X size={22} /> : <MessageCircle size={22} />}
