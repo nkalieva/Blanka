@@ -10,6 +10,7 @@ import { Camera, Mic, MapPin, Loader2, X, Trash2 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { FloatingChat } from '@/components/FloatingChat'
 import { VoicePlayer } from '@/components/VoicePlayer'
+import { RagChat } from '@/components/RagChat'
 
 type Shift = {
   id: string
@@ -312,6 +313,11 @@ export default function WorkerPage() {
       </div>
 
       <div className="h-px bg-[#e0e8e1] mx-4 md:mx-8 mb-6"></div>
+
+      {/* Knowledge Base */}
+      <div className="px-4 md:px-8 mb-6">
+        <RagChat />
+      </div>
 
       {/* Mobile: show list or detail */}
       {/* Desktop: two-panel side by side */}
