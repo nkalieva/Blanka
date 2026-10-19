@@ -313,17 +313,6 @@ export default function ManagerPage() {
             <p className="text-[#6b7b6e] text-sm mt-1">{t.allWorkers}</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex rounded-xl overflow-hidden border border-[#e0e8e1]">
-              <button
-                onClick={() => router.push('/worker')}
-                className="bg-white text-[#4a5c4d] px-5 py-2 text-sm hover:bg-[#f0f4f0] transition-colors"
-              >
-                {t.switchToWorker}
-              </button>
-              <button className="bg-[#5a7a5c] text-white px-5 py-2 text-sm font-medium">
-                {t.managerView}
-              </button>
-            </div>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
