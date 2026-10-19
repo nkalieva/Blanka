@@ -261,7 +261,7 @@ export default function WorkerPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#f0f4f0] pb-16 md:pb-0">
+    <div className="min-h-screen bg-[#f0f4f0] pb-24 md:pb-0">
       {/* Lightbox */}
       {lightbox && (
         <div
@@ -277,20 +277,24 @@ export default function WorkerPage() {
       )}
 
       {/* ── MOBILE HEADER ── */}
-      <div className="md:hidden sticky top-0 z-30 bg-[#f0f4f0] border-b border-[#e0e8e1]">
+      <div className="md:hidden sticky top-0 z-30" style={{ background: 'rgba(240,244,240,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(224,232,225,0.6)' }}>
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <BlankaLogo size={20} />
+          <div className="flex items-center gap-3">
+            {/* Avatar with initials */}
+            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-bold text-sm text-white" style={{ background: 'linear-gradient(135deg, #1a2821 0%, #3a5c3c 100%)' }}>
+              {userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
             <div>
-              <p className="font-black text-[#1a2821] text-base leading-tight">{userName}</p>
-              <p className="text-[#6b7b6e] text-xs">{today}</p>
+              <p className="font-bold text-[#1a2821] text-sm leading-tight">{userName}</p>
+              <p className="text-[#9aaa9d] text-xs">{today}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <button
               onClick={handleSignOut}
-              className="w-8 h-8 flex items-center justify-center rounded-full border border-[#e0e8e1] bg-white text-[#6b7b6e]"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-[#9aaa9d] hover:text-[#1a2821] transition-colors"
+              style={{ background: 'rgba(255,255,255,0.7)' }}
             >
               <LogOut size={14} strokeWidth={1.5} />
             </button>
@@ -345,33 +349,50 @@ export default function WorkerPage() {
             </span>
           </div>
 
-          <div className="space-y-2">
-            {shifts.map(shift => (
-              <button
-                key={shift.id}
-                onClick={() => { setSelected(shift); setShowDetail(true) }}
-                className="w-full text-left p-4 rounded-2xl border transition-all"
-                style={{
-                  backgroundColor: shift.status === 'done' ? '#dcfce7' : '#fee2e2',
-                  borderColor: selected?.id === shift.id
-                    ? (shift.status === 'done' ? '#86efac' : '#fca5a5')
-                    : 'transparent',
-                  boxShadow: selected?.id === shift.id ? '0 1px 3px rgba(0,0,0,0.08)' : undefined,
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-[#1a2821]">{formatTime(shift.scheduled_start)}</span>
-                  <span
-                    className="text-xs font-medium flex items-center gap-1"
-                    style={{ color: shift.status === 'done' ? '#16a34a' : shift.status === 'active' ? '#5a7a5c' : '#dc2626' }}
-                  >
-                    ● {shift.status.toUpperCase()}
-                  </span>
-                </div>
-                <p className="font-semibold text-[#1a2821] text-sm">{shift.location.split(',')[0]}</p>
-                <p className="text-[#6b7b6e] text-xs">{shift.location.split(',').slice(1).join(',').trim()}</p>
-              </button>
-            ))}
+          <div className="space-y-2.5">
+            {shifts.map(shift => {
+              const isDone = shift.status === 'done'
+              const isActive = shift.status === 'active'
+              const isSelected = selected?.id === shift.id
+              const accentColor = isDone ? '#16a34a' : isActive ? '#5a7a5c' : '#dc2626'
+              return (
+                <button
+                  key={shift.id}
+                  onClick={() => { setSelected(shift); setShowDetail(true) }}
+                  className="w-full text-left rounded-2xl transition-all overflow-hidden"
+                  style={{
+                    background: 'white',
+                    boxShadow: isSelected
+                      ? `0 0 0 2px ${isDone ? '#86efac' : '#fca5a5'}, 0 4px 16px rgba(0,0,0,0.08)`
+                      : '0 1px 4px rgba(0,0,0,0.06)',
+                  }}
+                >
+                  {/* Color accent bar on left */}
+                  <div className="flex">
+                    <div className="w-1 shrink-0 rounded-l-2xl" style={{ background: accentColor }} />
+                    <div className="flex-1 p-4">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-bold text-[#1a2821] text-base">{formatTime(shift.scheduled_start)}</span>
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                          style={{
+                            color: accentColor,
+                            background: isDone ? '#dcfce7' : isActive ? '#f0f4f0' : '#fee2e2',
+                          }}
+                        >
+                          {shift.status}
+                        </span>
+                      </div>
+                      <p className="font-semibold text-[#1a2821] text-sm leading-tight">{shift.location.split(',')[0]}</p>
+                      <p className="text-[#9aaa9d] text-xs mt-0.5 flex items-center gap-1">
+                        <MapPin size={10} strokeWidth={1.5} />
+                        {shift.location.split(',').slice(1).join(',').trim()}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -643,29 +664,36 @@ export default function WorkerPage() {
         )}
       </div>
 
-      {/* ── BOTTOM TAB BAR — mobile only ── */}
-      <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-[#e0e8e1] z-40">
-        <div className="flex">
+      {/* ── BOTTOM TAB BAR — mobile only, floating style ── */}
+      <nav className="fixed bottom-4 left-4 right-4 md:hidden z-40">
+        <div
+          className="flex rounded-2xl overflow-hidden"
+          style={{
+            background: 'rgba(26,40,33,0.92)',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.06) inset',
+          }}
+        >
           <button
             onClick={() => setActiveTab('shifts')}
-            className="flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors relative"
-            style={{ color: activeTab === 'shifts' ? '#1a2821' : '#9aaa9d' }}
+            className="flex-1 flex flex-col items-center py-3 gap-1 transition-all relative"
+            style={{ color: activeTab === 'shifts' ? '#86efac' : 'rgba(255,255,255,0.4)' }}
           >
             {activeTab === 'shifts' && (
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full" style={{ background: '#1a2821' }} />
+              <span className="absolute inset-0 rounded-2xl" style={{ background: 'rgba(255,255,255,0.06)' }} />
             )}
-            <CalendarClock size={22} strokeWidth={1.5} />
+            <CalendarClock size={20} strokeWidth={1.5} />
             <span className="text-[10px] font-semibold tracking-wide">Shifts</span>
           </button>
           <button
             onClick={() => setActiveTab('ai')}
-            className="flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors relative"
-            style={{ color: activeTab === 'ai' ? '#1a2821' : '#9aaa9d' }}
+            className="flex-1 flex flex-col items-center py-3 gap-1 transition-all relative"
+            style={{ color: activeTab === 'ai' ? '#86efac' : 'rgba(255,255,255,0.4)' }}
           >
             {activeTab === 'ai' && (
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full" style={{ background: '#1a2821' }} />
+              <span className="absolute inset-0 rounded-2xl" style={{ background: 'rgba(255,255,255,0.06)' }} />
             )}
-            <BookOpen size={22} strokeWidth={1.5} />
+            <BookOpen size={20} strokeWidth={1.5} />
             <span className="text-[10px] font-semibold tracking-wide">Ask AI</span>
           </button>
         </div>
